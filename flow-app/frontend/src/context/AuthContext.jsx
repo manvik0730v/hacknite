@@ -13,11 +13,15 @@ export function AuthProvider({ children }) {
     const unsub = auth.onAuthStateChanged(async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
-        // Sync with MongoDB on every login
-        const res = await API.post('/api/auth/login', {
-          username: firebaseUser.displayName || firebaseUser.email.split('@')[0]
-        });
-        setDbUser(res.data);
+        try {
+          const res = await API.post('/api/auth/login', {
+            username: firebaseUser.displayName || firebaseUser.email.split('@')[0]
+          });
+          setDbUser(res.data);
+        } catch (err) {
+          console.error('Backend sync failed:', err.message);
+          // App still works even if backend sync fails
+        }
       }
       setLoading(false);
     });
