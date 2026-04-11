@@ -108,7 +108,7 @@ Thumbs.db
 mkdir backend && cd backend
 npm init -y
 npm install express mongoose dotenv cors helmet morgan
-npm install firebase-admin          # for token verification
+npm install firebase-admin          
 npm install nodemon --save-dev
 ```
 
