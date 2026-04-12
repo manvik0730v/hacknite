@@ -16,7 +16,7 @@ app.use(express.json({ limit: '10mb' }));
 
 app.use('/api/auth',      require('./routes/authRoutes'));
 app.use('/api/users',     require('./routes/userRoutes'));
-app.use('/api/quests',    require('./routes/questRoutes'));
+app.use('/api/quests',    require('./routes/questRoutes').router);
 app.use('/api/runs',      require('./routes/runRoutes'));
 app.use('/api/friends',   require('./routes/friendRoutes'));
 app.use('/api/districts', require('./routes/districtRoutes'));

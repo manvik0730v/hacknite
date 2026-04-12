@@ -4,36 +4,42 @@ const { protect } = require('../middleware/authMiddleware');
 const User = require('../models/User');
 const FriendRequest = require('../models/FriendRequest');
 const District = require('../models/District');
+const { getLevel } = require('../utils/levelUtils');
+
+function addLevel(user) {
+  const obj = typeof user.toObject === 'function' ? user.toObject() : { ...user };
+  obj.level = getLevel(obj.xp || 0);
+  return obj;
+}
 
 router.get('/', protect, async (req, res) => {
   const user = await User.findOne({ uid: req.user.uid });
   const friends = await User.find({ uid: { $in: user.friends || [] } })
-    .select('uid username profilePhoto streak stats');
-  res.json(friends);
+    .select('uid username profilePhoto streak stats xp');
+  res.json(friends.map(addLevel));
 });
 
 router.get('/users', protect, async (req, res) => {
   const { search } = req.query;
   const query = { uid: { $ne: req.user.uid } };
   if (search) query.username = { $regex: search, $options: 'i' };
-  const users = await User.find(query).select('uid username profilePhoto').limit(20);
-  res.json(users);
+  const users = await User.find(query).select('uid username profilePhoto xp').limit(20);
+  res.json(users.map(addLevel));
 });
 
 router.get('/profile/:uid', protect, async (req, res) => {
   const user = await User.findOne({ uid: req.params.uid })
-    .select('uid username profilePhoto streak stats');
+    .select('uid username profilePhoto streak stats xp');
   if (!user) return res.status(404).json({ error: 'User not found' });
   const donCount = await District.countDocuments({ donUid: req.params.uid });
-  res.json({ ...user.toObject(), districtsDon: donCount });
+  const obj = addLevel(user);
+  obj.districtsDon = donCount;
+  res.json(obj);
 });
 
 router.post('/request', protect, async (req, res) => {
   const { toUid } = req.body;
-  // Check if reverse request exists — auto accept both
-  const reverseRequest = await FriendRequest.findOne({
-    fromUid: toUid, toUid: req.user.uid, status: 'pending'
-  });
+  const reverseRequest = await FriendRequest.findOne({ fromUid: toUid, toUid: req.user.uid, status: 'pending' });
   if (reverseRequest) {
     reverseRequest.status = 'accepted';
     await reverseRequest.save();
