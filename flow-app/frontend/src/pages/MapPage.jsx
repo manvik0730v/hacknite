@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Polyline, Marker, useMap } from 'react-leaflet
 import L from 'leaflet';
 import { useTheme } from '../context/ThemeContext';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { FiPlay, FiSquare, FiSearch, FiStar } from 'react-icons/fi';
+import { FiPlay, FiSquare, FiSearch, FiStar, FiCheckCircle } from 'react-icons/fi';
 import { GiCrown } from 'react-icons/gi';
 import API from '../services/api';
 import locImg from '../assets/loc.svg';
