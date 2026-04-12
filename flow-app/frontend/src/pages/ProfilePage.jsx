@@ -1,21 +1,37 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import ThemeToggle from '../components/ThemeToggle';
 import { logout } from '../services/firebase';
 import { useNavigate } from 'react-router-dom';
 import API from '../services/api';
 
 export default function ProfilePage() {
-  const { user, dbUser } = useAuth();
+  const { user, dbUser, refreshUser } = useAuth();
   const { sinMode } = useTheme();
   const nav = useNavigate();
   const [runs, setRuns] = useState([]);
   const [loadingRuns, setLoadingRuns] = useState(true);
   const [deletingId, setDeletingId] = useState(null);
+  const [editing, setEditing] = useState(false);
+  const [editData, setEditData] = useState({});
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchRuns();
   }, []);
+
+  useEffect(() => {
+    if (dbUser) {
+      setEditData({
+        username: dbUser.username || '',
+        height: dbUser.height || '',
+        weight: dbUser.weight || '',
+        gender: dbUser.gender || '',
+        profilePhoto: dbUser.profilePhoto || ''
+      });
+    }
+  }, [dbUser]);
 
   const fetchRuns = async () => {
     try {
@@ -25,6 +41,19 @@ export default function ProfilePage() {
       console.error(err);
     } finally {
       setLoadingRuns(false);
+    }
+  };
+
+  const saveEdit = async () => {
+    setSaving(true);
+    try {
+      await API.post('/api/auth/login', { ...editData, onboardingDone: true });
+      await refreshUser();
+      setEditing(false);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -51,40 +80,99 @@ export default function ProfilePage() {
     return `${m}:${s}`;
   };
 
-  const formatDate = (dateStr) => {
-    return new Date(dateStr).toLocaleDateString('en-IN', {
-      day: 'numeric', month: 'short', year: 'numeric'
-    });
-  };
+  const formatDate = (d) => new Date(d).toLocaleDateString('en-IN', {
+    day: 'numeric', month: 'short', year: 'numeric'
+  });
 
-  const bg = sinMode ? 'bg-black text-white' : 'bg-gray-50 text-gray-900';
-  const card = sinMode ? 'bg-gray-900 border border-gray-800' : 'bg-white shadow';
+  const inputClass = "w-full bg-[var(--bg3)] text-[var(--text)] border border-[var(--border)] rounded-xl p-3 outline-none focus:border-[var(--accent)] transition text-sm";
 
   return (
-    <div className={`min-h-screen pb-24 ${bg}`}>
-      {/* Header */}
-      <div className="p-5">
-        <h1 className="text-2xl font-bold mb-5">Profile</h1>
-
-        {/* Profile card */}
-        <div className={`rounded-2xl p-4 mb-4 ${card}`}>
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-indigo-500 flex items-center justify-center text-white text-2xl font-bold">
-              {(dbUser?.username || user?.displayName || 'U')[0].toUpperCase()}
-            </div>
-            <div>
-              <p className="text-lg font-bold">{dbUser?.username || user?.displayName}</p>
-              <p className="text-gray-400 text-sm">{user?.email}</p>
-              <p className={`text-xs mt-1 font-bold ${sinMode ? 'text-cyan-400' : 'text-indigo-500'}`}>
-                Level {dbUser?.level || 1}
-              </p>
-            </div>
-          </div>
+    <div className="min-h-screen pb-24 bg-[var(--bg)]">
+      <div className="p-5 flex flex-col gap-4">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-[var(--text)]">Profile</h1>
+          <ThemeToggle />
         </div>
 
-        {/* All-time stats */}
-        <div className={`rounded-2xl p-4 mb-4 ${card}`}>
-          <p className="font-bold mb-3">All Time Records</p>
+        {/* Profile card */}
+        <div className="rounded-2xl p-4 bg-[var(--card)] border border-[var(--border)]">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-16 h-16 rounded-full bg-[var(--accent)] flex items-center justify-center overflow-hidden border-2 border-[var(--accent)]">
+              {dbUser?.profilePhoto
+                ? <img src={dbUser.profilePhoto} className="w-full h-full object-cover" alt="avatar" />
+                : <span className="text-white text-2xl font-bold">
+                    {(dbUser?.username || 'U')[0].toUpperCase()}
+                  </span>
+              }
+            </div>
+            <div className="flex-1">
+              <p className="text-lg font-bold text-[var(--text)]">{dbUser?.username}</p>
+              <p className="text-[var(--text2)] text-sm">{user?.email}</p>
+              <p className="text-[var(--accent)] text-xs font-bold mt-0.5">Level {dbUser?.level || 1}</p>
+            </div>
+            <button onClick={() => setEditing(!editing)}
+              className="px-3 py-1.5 rounded-xl bg-[var(--bg3)] text-[var(--text)] text-sm font-bold border border-[var(--border)]">
+              {editing ? 'Cancel' : 'Edit'}
+            </button>
+          </div>
+
+          {/* Stats pills */}
+          {!editing && (
+            <div className="flex gap-2 flex-wrap">
+              {dbUser?.gender && (
+                <span className="px-3 py-1 rounded-full bg-[var(--bg3)] text-[var(--text2)] text-xs">{dbUser.gender}</span>
+              )}
+              {dbUser?.height && (
+                <span className="px-3 py-1 rounded-full bg-[var(--bg3)] text-[var(--text2)] text-xs">{dbUser.height} cm</span>
+              )}
+              {dbUser?.weight && (
+                <span className="px-3 py-1 rounded-full bg-[var(--bg3)] text-[var(--text2)] text-xs">{dbUser.weight} kg</span>
+              )}
+              {!dbUser?.gender && !dbUser?.height && !dbUser?.weight && (
+                <span className="text-[var(--text2)] text-xs">No stats added yet — tap Edit</span>
+              )}
+            </div>
+          )}
+
+          {/* Edit form */}
+          {editing && (
+            <div className="flex flex-col gap-3 mt-3">
+              <input className={inputClass} placeholder="Username"
+                value={editData.username} onChange={e => setEditData(d => ({ ...d, username: e.target.value }))} />
+              <input className={inputClass} placeholder="Profile photo URL"
+                value={editData.profilePhoto} onChange={e => setEditData(d => ({ ...d, profilePhoto: e.target.value }))} />
+              <div className="flex gap-2">
+                {['Male', 'Female', 'Other'].map(g => (
+                  <button key={g} onClick={() => setEditData(d => ({ ...d, gender: g }))}
+                    className={`flex-1 py-2 rounded-xl text-sm font-bold border transition
+                      ${editData.gender === g
+                        ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
+                        : 'bg-[var(--bg3)] text-[var(--text)] border-[var(--border)]'}`}>
+                    {g}
+                  </button>
+                ))}
+                <button onClick={() => setEditData(d => ({ ...d, gender: '' }))}
+                  className="px-3 py-2 rounded-xl text-sm border border-[var(--border)] text-[var(--text2)]">
+                  Clear
+                </button>
+              </div>
+              <div className="flex gap-2">
+                <input className={inputClass} placeholder="Height (cm)" type="number"
+                  value={editData.height} onChange={e => setEditData(d => ({ ...d, height: e.target.value }))} />
+                <input className={inputClass} placeholder="Weight (kg)" type="number"
+                  value={editData.weight} onChange={e => setEditData(d => ({ ...d, weight: e.target.value }))} />
+              </div>
+              <button onClick={saveEdit} disabled={saving}
+                className="w-full bg-[var(--accent)] text-white font-bold py-3 rounded-xl disabled:opacity-40 transition">
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* All time records */}
+        <div className="rounded-2xl p-4 bg-[var(--card)] border border-[var(--border)]">
+          <p className="font-bold mb-3 text-[var(--text)]">All Time Records</p>
           <div className="grid grid-cols-2 gap-3">
             {[
               { label: 'Longest Run', value: `${((dbUser?.stats?.longestRun || 0) / 1000).toFixed(2)} km` },
@@ -92,50 +180,43 @@ export default function ProfilePage() {
               { label: 'Regions Captured', value: dbUser?.stats?.regionsCapture || 0 },
               { label: 'Total Calories', value: `${dbUser?.stats?.totalCalories || 0} kcal` }
             ].map(({ label, value }) => (
-              <div key={label} className={`rounded-xl p-3 ${sinMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
-                <p className="text-xs text-gray-400">{label}</p>
-                <p className="font-bold mt-1">{value}</p>
+              <div key={label} className="rounded-xl p-3 bg-[var(--bg3)]">
+                <p className="text-xs text-[var(--text2)]">{label}</p>
+                <p className="font-bold mt-1 text-[var(--text)]">{value}</p>
               </div>
             ))}
           </div>
         </div>
 
         {/* My Runs */}
-        <div className={`rounded-2xl p-4 mb-4 ${card}`}>
-          <p className="font-bold mb-3">My Runs ({runs.length})</p>
+        <div className="rounded-2xl p-4 bg-[var(--card)] border border-[var(--border)]">
+          <p className="font-bold mb-3 text-[var(--text)]">My Runs ({runs.length})</p>
           {loadingRuns ? (
-            <p className="text-gray-400 text-sm text-center py-4">Loading runs...</p>
+            <p className="text-[var(--text2)] text-sm text-center py-4">Loading runs...</p>
           ) : runs.length === 0 ? (
-            <p className="text-gray-400 text-sm text-center py-4">No runs yet. Start your first run!</p>
+            <p className="text-[var(--text2)] text-sm text-center py-4">No runs yet. Start your first run!</p>
           ) : (
             <div className="flex flex-col gap-3">
               {runs.map(run => (
                 <div key={run._id}
-                  className={`rounded-xl p-3 flex justify-between items-center ${sinMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+                  className="rounded-xl p-3 flex justify-between items-center bg-[var(--bg3)]">
                   <div className="flex-1">
-                    <p className="text-xs text-gray-400 mb-1">{formatDate(run.date || run.createdAt)}</p>
-                    <div className="flex gap-4">
-                      <div>
-                        <p className="text-xs text-gray-400">Distance</p>
-                        <p className="font-bold text-sm">{(run.distance / 1000).toFixed(2)} km</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-400">Time</p>
-                        <p className="font-bold text-sm">{formatTime(run.duration)}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-400">Pace</p>
-                        <p className="font-bold text-sm">{run.pace?.toFixed(2) || '—'} min/km</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-400">Cal</p>
-                        <p className="font-bold text-sm">{run.calories}</p>
-                      </div>
+                    <p className="text-xs text-[var(--text2)] mb-1">{formatDate(run.date || run.createdAt)}</p>
+                    <div className="flex gap-3 flex-wrap">
+                      {[
+                        { label: 'Distance', value: `${(run.distance / 1000).toFixed(2)} km` },
+                        { label: 'Time', value: formatTime(run.duration) },
+                        { label: 'Pace', value: `${run.pace?.toFixed(2) || '—'} min/km` },
+                        { label: 'Cal', value: run.calories }
+                      ].map(({ label, value }) => (
+                        <div key={label}>
+                          <p className="text-xs text-[var(--text2)]">{label}</p>
+                          <p className="font-bold text-sm text-[var(--text)]">{value}</p>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                  <button
-                    onClick={() => deleteRun(run._id)}
-                    disabled={deletingId === run._id}
+                  <button onClick={() => deleteRun(run._id)} disabled={deletingId === run._id}
                     className="ml-3 w-8 h-8 flex items-center justify-center rounded-full bg-red-100 text-red-500 hover:bg-red-200 transition disabled:opacity-40 text-sm font-bold">
                     {deletingId === run._id ? '...' : '✕'}
                   </button>
@@ -145,9 +226,9 @@ export default function ProfilePage() {
           )}
         </div>
 
-        {/* Logout */}
+        {/* Logout at the bottom */}
         <button onClick={handleLogout}
-          className="w-full bg-red-500 text-white font-bold py-3 rounded-xl hover:bg-red-600 transition">
+          className="w-full bg-red-500 text-white font-bold py-4 rounded-2xl hover:bg-red-600 transition text-lg mt-2">
           Log Out
         </button>
       </div>

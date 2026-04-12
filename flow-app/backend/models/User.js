@@ -1,12 +1,14 @@
 const mongoose = require('mongoose');
 
 const UserSchema = new mongoose.Schema({
-  uid: { type: String, required: true, unique: true }, // Firebase UID
-  username: { type: String, required: true, unique: true },
+  uid: { type: String, required: true, unique: true },
+  username: { type: String, required: true },
   email: String,
   profilePhoto: String,
+  gender: String,
   height: Number,
   weight: Number,
+  onboardingDone: { type: Boolean, default: false },
   level: { type: Number, default: 1 },
   xp: { type: Number, default: 0 },
   streak: { type: Number, default: 0 },
@@ -18,7 +20,7 @@ const UserSchema = new mongoose.Schema({
     regionsCapture: { type: Number, default: 0 },
     totalCalories: { type: Number, default: 0 }
   },
-  friends: [{ type: String }], // array of uids
+  friends: [{ type: String }],
   sinModeEnabled: { type: Boolean, default: false }
 }, { timestamps: true });
 

@@ -8,13 +8,20 @@ import QuestPage from './pages/QuestPage';
 import MapPage from './pages/MapPage';
 import FriendsPage from './pages/FriendsPage';
 import ProfilePage from './pages/ProfilePage';
+import OnboardingPage from './pages/OnboardingPage';
 
 function AppRoutes() {
-  const { user } = useAuth();
+  const { user, isNewUser } = useAuth();
 
   if (!user) return (
     <Routes>
       <Route path="*" element={<LoginPage />} />
+    </Routes>
+  );
+
+  if (isNewUser) return (
+    <Routes>
+      <Route path="*" element={<OnboardingPage />} />
     </Routes>
   );
 
