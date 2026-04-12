@@ -3,34 +3,40 @@ import { useTheme } from '../context/ThemeContext';
 import SinModeToggle from '../components/SinModeToggle';
 import API from '../services/api';
 import { useEffect, useState } from 'react';
+import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import logo from '../assets/logo.svg';
 
-function getCalendarDays() {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = today.getMonth();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const firstDay = new Date(year, month, 1).getDay();
-  return { daysInMonth, firstDay, today: today.getDate(), month, year };
-}
-
-const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
 export default function HomePage() {
   const { dbUser } = useAuth();
   const { sinMode } = useTheme();
-  const [activeDays, setActiveDays] = useState([]);
-  const cal = getCalendarDays();
+  const [activeDays, setActiveDays] = useState({});
+  const [viewDate, setViewDate] = useState(new Date());
 
   useEffect(() => {
     API.get('/api/runs').then(res => {
-      const days = res.data.map(r => new Date(r.date || r.createdAt).getDate());
-      setActiveDays([...new Set(days)]);
+      const map = {};
+      res.data.forEach(r => {
+        const d = new Date(r.date || r.createdAt);
+        const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+        map[key] = true;
+      });
+      setActiveDays(map);
     }).catch(() => {});
   }, []);
 
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const firstDay = new Date(year, month, 1).getDay();
+  const today = new Date();
+
+  const prevMonth = () => setViewDate(new Date(year, month-1, 1));
+  const nextMonth = () => setViewDate(new Date(year, month+1, 1));
+
   return (
     <div className="min-h-screen pb-20 bg-[var(--bg)]">
-      {/* Top bar */}
       <div className="flex justify-between items-center px-4 pt-5 pb-3">
         <div>
           <p className="text-xs text-[var(--text2)]">Hi there!</p>
@@ -39,63 +45,63 @@ export default function HomePage() {
         <SinModeToggle />
       </div>
 
-      {/* App name banner */}
-      <div className={`mx-4 mb-4 rounded-2xl p-4 flex items-center justify-between
-        ${sinMode ? 'bg-red-950 border border-red-900' : 'bg-[#111] text-white'}`}>
-        <div>
-          <p className="text-white font-black text-lg">SinCity Stride</p>
-          <p className={`text-xs mt-0.5 ${sinMode ? 'text-red-300' : 'text-gray-300'}`}>
-            {sinMode ? 'Conquer. Dominate. Rise.' : 'Your fitness journey starts here.'}
-          </p>
-        </div>
-        <span className="text-3xl">{sinMode ? '⚔️' : '🏃'}</span>
+      {/* Logo */}
+      <div className="flex justify-center px-4 mb-5">
+        <img src={logo} alt="SinCity Stride" className="w-full max-w-xs h-32 object-contain" />
       </div>
 
-      {/* Stats 2x2 */}
-      <div className="grid grid-cols-2 gap-3 mx-4 mb-5">
-        {[
-          { label: 'Level',   value: dbUser?.level  || 1,   icon: '⭐' },
-          { label: 'XP',      value: dbUser?.xp     || 0,   icon: '💫' },
-          { label: 'Streak',  value: `${dbUser?.streak || 0}d`, icon: '🔥' },
-          { label: 'Calories',value: `${dbUser?.stats?.totalCalories || 0}`, icon: '⚡' }
-        ].map(({ label, value, icon }) => (
-          <div key={label} className="rounded-2xl p-4 bg-[var(--card)] border border-[var(--border)]">
-            <p className="text-xl">{icon}</p>
-            <p className="text-xs text-[var(--text2)] mt-1">{label}</p>
-            <p className="text-2xl font-black text-[var(--text)] mt-0.5">{value}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Activity Calendar */}
+      {/* Calendar */}
       <div className="mx-4 rounded-2xl p-4 bg-[var(--card)] border border-[var(--border)]">
-        <p className="font-bold text-[var(--text)] mb-3">
-          {MONTH_NAMES[cal.month]} {cal.year} — Activity
-        </p>
+        <div className="flex items-center justify-between mb-4">
+          <button onClick={prevMonth}
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-[var(--bg3)] text-[var(--text)] hover:opacity-70 transition">
+            <FiChevronLeft size={18} />
+          </button>
+          <p className="font-bold text-[var(--text)]">{MONTHS[month]} {year}</p>
+          <button onClick={nextMonth}
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-[var(--bg3)] text-[var(--text)] hover:opacity-70 transition">
+            <FiChevronRight size={18} />
+          </button>
+        </div>
+
         <div className="grid grid-cols-7 gap-1 text-center">
           {['S','M','T','W','T','F','S'].map((d,i) => (
             <p key={i} className="text-[10px] text-[var(--text2)] font-bold pb-1">{d}</p>
           ))}
-          {Array.from({ length: cal.firstDay }).map((_, i) => <div key={`e${i}`} />)}
-          {Array.from({ length: cal.daysInMonth }).map((_, i) => {
-            const day = i + 1;
-            const isActive = activeDays.includes(day);
-            const isToday = day === cal.today;
+          {Array.from({ length: firstDay }).map((_,i) => <div key={`e${i}`} />)}
+          {Array.from({ length: daysInMonth }).map((_,i) => {
+            const day = i+1;
+            const key = `${year}-${month}-${day}`;
+            const isActive = activeDays[key];
+            const isToday = day===today.getDate() && month===today.getMonth() && year===today.getFullYear();
             return (
-              <div key={day} className={`aspect-square rounded-lg flex items-center justify-center text-xs font-bold transition
+              <div key={day} className={`aspect-square rounded-lg flex items-center justify-center text-xs font-bold
                 ${isToday
                   ? sinMode ? 'bg-red-600 text-white' : 'bg-[#111] text-white'
                   : isActive
-                    ? sinMode ? 'bg-red-900 text-red-300' : 'bg-green-100 text-green-700'
-                    : 'text-[var(--text2)]'}`}>
+                    ? sinMode ? 'bg-red-900 text-red-200' : 'bg-green-500 text-white'
+                    : 'text-[#aaa]'}`}>
                 {day}
               </div>
             );
           })}
         </div>
-        <p className="text-xs text-[var(--text2)] mt-3 text-center">
-          {activeDays.length} active days this month
-        </p>
+
+        <div className="flex items-center justify-between mt-4 pt-3 border-t border-[var(--border)]">
+          <div className="flex items-center gap-4 text-xs">
+            <span className="flex items-center gap-1">
+              <span className={`w-3 h-3 rounded-sm ${sinMode?'bg-red-900':'bg-green-500'}`} />
+              <span className="text-[var(--text2)]">Active</span>
+            </span>
+            <span className="flex items-center gap-1">
+              <span className={`w-3 h-3 rounded-sm ${sinMode?'bg-red-600':'bg-[#111]'}`} />
+              <span className="text-[var(--text2)]">Today</span>
+            </span>
+          </div>
+          <p className="text-xs font-bold text-[var(--text2)]">
+            🔥 {dbUser?.streak||0} day streak
+          </p>
+        </div>
       </div>
     </div>
   );

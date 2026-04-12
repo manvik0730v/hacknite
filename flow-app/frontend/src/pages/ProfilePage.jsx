@@ -3,6 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { logout } from '../services/firebase';
 import { useNavigate } from 'react-router-dom';
+import { FiEdit2, FiTrash2, FiLogOut } from 'react-icons/fi';
+import { GiCrown } from 'react-icons/gi';
 import API from '../services/api';
 
 export default function ProfilePage() {
@@ -15,9 +17,10 @@ export default function ProfilePage() {
   const [editing, setEditing] = useState(false);
   const [editData, setEditData] = useState({});
   const [saving, setSaving] = useState(false);
+  const [districtCount, setDistrictCount] = useState(0);
   const fileInputRef = useRef(null);
 
-  useEffect(() => { fetchRuns(); }, []);
+  useEffect(() => { fetchRuns(); fetchDistricts(); }, []);
 
   useEffect(() => {
     if (dbUser) setEditData({
@@ -30,11 +33,16 @@ export default function ProfilePage() {
   }, [dbUser]);
 
   const fetchRuns = async () => {
-    try {
-      const res = await API.get('/api/runs');
-      setRuns(res.data);
-    } catch (err) { console.error(err); }
+    try { const res = await API.get('/api/runs'); setRuns(res.data); }
+    catch (err) { console.error(err); }
     finally { setLoadingRuns(false); }
+  };
+
+  const fetchDistricts = async () => {
+    try {
+      const res = await API.get('/api/districts');
+      setDistrictCount(res.data.filter(d => d.iAmDon).length);
+    } catch (err) { console.error(err); }
   };
 
   const handlePfpChange = (e) => {
@@ -66,7 +74,6 @@ export default function ProfilePage() {
 
   const fmt = (s) => `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
   const fmtDate = (d) => new Date(d).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
-
   const inputCls = "w-full bg-[var(--bg3)] text-[var(--text)] border border-[var(--border)] rounded-xl p-3 outline-none focus:border-[var(--accent)] transition text-sm";
   const card = "rounded-2xl p-4 bg-[var(--card)] border border-[var(--border)]";
 
@@ -78,17 +85,18 @@ export default function ProfilePage() {
         {/* Profile card */}
         <div className={card}>
           <div className="flex items-center gap-4 mb-3">
-            {/* Avatar with pencil */}
             <div className="relative flex-shrink-0">
-              <div className="w-20 h-20 rounded-full bg-[var(--accent)] flex items-center justify-center overflow-hidden border-2 border-[var(--border)]">
+              <div className="w-20 h-20 rounded-full bg-[var(--bg3)] flex items-center justify-center overflow-hidden border-2 border-[var(--border)]">
                 {(editing ? editData.profilePhoto : dbUser?.profilePhoto)
                   ? <img src={editing ? editData.profilePhoto : dbUser.profilePhoto} className="w-full h-full object-cover" />
-                  : <span className="text-white text-3xl font-black">{(dbUser?.username||'U')[0].toUpperCase()}</span>}
+                  : <span className="text-white text-3xl font-black bg-[var(--accent)] w-full h-full flex items-center justify-center">
+                      {(dbUser?.username||'U')[0].toUpperCase()}
+                    </span>}
               </div>
               <button onClick={() => fileInputRef.current.click()}
-                className={`absolute bottom-0 right-0 w-7 h-7 rounded-full flex items-center justify-center text-sm shadow border-2 border-[var(--bg)] text-white
-                  ${sinMode ? 'bg-red-600' : 'bg-[#111]'}`}>
-                ✏️
+                className={`absolute bottom-0 right-0 w-7 h-7 rounded-full flex items-center justify-center shadow border-2 border-[var(--bg)] text-white
+                  ${sinMode?'bg-red-600':'bg-[#111]'}`}>
+                <FiEdit2 size={12} />
               </button>
               <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePfpChange} />
             </div>
@@ -96,17 +104,18 @@ export default function ProfilePage() {
             <div className="flex-1 min-w-0">
               <p className="text-lg font-black text-[var(--text)] truncate">{dbUser?.username}</p>
               <p className="text-[var(--text2)] text-xs truncate">{user?.email}</p>
-              <div className="flex gap-2 mt-1 flex-wrap">
-                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${sinMode ? 'bg-red-950 text-red-300' : 'bg-[#f0f0f0] text-[#555]'}`}>
-                  Lv.{dbUser?.level||1}
-                </span>
-                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${sinMode ? 'bg-red-950 text-red-300' : 'bg-[#f0f0f0] text-[#555]'}`}>
+              <div className="flex gap-2 mt-1.5 flex-wrap">
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${sinMode?'bg-red-950 text-red-300':'bg-[#f0f0f0] text-[#555]'}`}>
                   {dbUser?.xp||0} XP
+                </span>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${sinMode?'bg-red-950 text-red-300':'bg-[#f0f0f0] text-[#555]'}`}>
+                  <span>{dbUser?.streak||0} day streak</span>
                 </span>
               </div>
             </div>
+
             <button onClick={() => setEditing(!editing)}
-              className="px-3 py-1.5 rounded-xl bg-[var(--bg3)] text-[var(--text)] text-sm font-bold border border-[var(--border)]">
+              className="px-3 py-1.5 rounded-xl bg-[var(--bg3)] text-[var(--text)] text-sm font-bold border border-[var(--border)] flex-shrink-0">
               {editing ? 'Cancel' : 'Edit'}
             </button>
           </div>
@@ -155,14 +164,14 @@ export default function ProfilePage() {
           <p className="font-bold text-[var(--text)] mb-3">All Time Records</p>
           <div className="grid grid-cols-2 gap-3">
             {[
-              { label:'Longest Run',     value:`${((dbUser?.stats?.longestRun||0)/1000).toFixed(2)} km` },
-              { label:'Best Pace',       value:`${dbUser?.stats?.bestPace||0} min/km` },
-              { label:'Streak',          value:`${dbUser?.streak||0} days` },
-              { label:'Total Calories',  value:`${dbUser?.stats?.totalCalories||0} kcal` },
-            ].map(({ label, value }) => (
+              { label:'Longest Run', value:`${((dbUser?.stats?.longestRun||0)/1000).toFixed(2)} km` },
+              { label:'Best Pace',   value:`${dbUser?.stats?.bestPace||0} min/km` },
+              { label:'Streak',      value:`${dbUser?.streak||0} days` },
+              { label:'Districts as Don', value: districtCount, icon: <GiCrown size={14} className="text-yellow-500 mr-1 inline" /> },
+            ].map(({ label, value, icon }) => (
               <div key={label} className="rounded-xl p-3 bg-[var(--bg3)]">
                 <p className="text-xs text-[var(--text2)]">{label}</p>
-                <p className="font-black mt-1 text-[var(--text)]">{value}</p>
+                <p className="font-black mt-1 text-[var(--text)]">{icon}{value}</p>
               </div>
             ))}
           </div>
@@ -174,18 +183,18 @@ export default function ProfilePage() {
           {loadingRuns ? (
             <p className="text-[var(--text2)] text-sm text-center py-4">Loading...</p>
           ) : runs.length === 0 ? (
-            <p className="text-[var(--text2)] text-sm text-center py-4">No runs yet. Start your first run!</p>
+            <p className="text-[var(--text2)] text-sm text-center py-4">No runs yet.</p>
           ) : (
             <div className="flex flex-col gap-3">
               {runs.map(run => (
-                <div key={run._id} className="rounded-xl p-3 flex justify-between items-center bg-[var(--bg3)]">
+                <div key={run._id} className="rounded-xl p-3 flex gap-3 items-start bg-[var(--bg3)]">
                   <div className="flex-1">
-                    <p className="text-xs text-[var(--text2)] mb-1">{fmtDate(run.date||run.createdAt)}</p>
-                    <div className="flex gap-3 flex-wrap">
+                    <p className="text-xs text-[var(--text2)] mb-1.5">{fmtDate(run.date||run.createdAt)}</p>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                       {[
                         { l:'Distance', v:`${(run.distance/1000).toFixed(2)} km` },
                         { l:'Time',     v:fmt(run.duration) },
-                        { l:'Pace',     v:`${run.pace?.toFixed(2)||'—'} min/km` },
+                        { l:'Avg Pace', v:`${run.pace?.toFixed(2)||'—'} /km` },
                         { l:'Steps',    v:run.steps||'—' },
                       ].map(({ l, v }) => (
                         <div key={l}>
@@ -196,8 +205,8 @@ export default function ProfilePage() {
                     </div>
                   </div>
                   <button onClick={() => deleteRun(run._id)} disabled={deletingId===run._id}
-                    className="ml-3 w-8 h-8 flex items-center justify-center rounded-full bg-red-100 text-red-500 hover:bg-red-200 transition disabled:opacity-40 text-sm font-bold flex-shrink-0">
-                    {deletingId===run._id ? '...' : '✕'}
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-red-50 text-red-400 hover:bg-red-100 transition disabled:opacity-40 flex-shrink-0">
+                    {deletingId===run._id ? '...' : <FiTrash2 size={14} />}
                   </button>
                 </div>
               ))}
@@ -207,8 +216,8 @@ export default function ProfilePage() {
 
         {/* Logout */}
         <button onClick={async () => { await logout(); nav('/'); }}
-          className="w-full bg-red-500 text-white font-bold py-4 rounded-2xl hover:bg-red-600 transition text-lg">
-          Log Out
+          className="w-full bg-red-500 text-white font-bold py-4 rounded-2xl hover:bg-red-600 transition flex items-center justify-center gap-2 text-base">
+          <FiLogOut size={18} /> Log Out
         </button>
       </div>
     </div>
