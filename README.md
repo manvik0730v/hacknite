@@ -122,7 +122,7 @@ npm install nodemon --save-dev
 
 ### backend/.env
 ```
-PORT=5000
+PORT=8000
 MONGO_URI=mongodb+srv://manvik0730v:YOUR_DB_PASSWORD@cluster0.qbigyod.mongodb.net/flowapp?appName=Cluster0
 FIREBASE_PROJECT_ID=your-firebase-project-id
 ```
@@ -170,7 +170,7 @@ app.use('/api/friends', require('./routes/friendRoutes'));
 
 app.get('/', (req, res) => res.json({ message: '==== API running' }));
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => console.log(`Server on port ${PORT}`));
 ```
 
@@ -239,7 +239,7 @@ const QuestSchema = new mongoose.Schema({
   description: String,
   type: { type: String, enum: ['daily', 'level'] },
   requiredLevel: { type: Number, default: 1 },
-  goal: Number,          // e.g. 5000 steps
+  goal: Number,          // e.g. 6000 steps
   goalType: String,      // 'steps', 'distance', 'calories'
   xpReward: Number,
   badgeReward: String,
@@ -470,7 +470,7 @@ VITE_FIREBASE_API_KEY=your_key
 VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
 VITE_FIREBASE_PROJECT_ID=your_project_id
 VITE_FIREBASE_APP_ID=your_app_id
-VITE_BACKEND_URL=http://localhost:5000
+VITE_BACKEND_URL=http://localhost:8000
 ```
 
 ---
@@ -943,7 +943,7 @@ npm install concurrently --save-dev
 ```bash
 npm run dev
 # Frontend: http://localhost:5173
-# Backend:  http://localhost:5000
+# Backend:  http://localhost:8000
 ```
 
 ---
