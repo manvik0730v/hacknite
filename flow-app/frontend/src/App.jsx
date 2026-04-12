@@ -12,19 +12,8 @@ import OnboardingPage from './pages/OnboardingPage';
 
 function AppRoutes() {
   const { user, isNewUser } = useAuth();
-
-  if (!user) return (
-    <Routes>
-      <Route path="*" element={<LoginPage />} />
-    </Routes>
-  );
-
-  if (isNewUser) return (
-    <Routes>
-      <Route path="*" element={<OnboardingPage />} />
-    </Routes>
-  );
-
+  if (!user) return <Routes><Route path="*" element={<LoginPage />} /></Routes>;
+  if (isNewUser) return <Routes><Route path="*" element={<OnboardingPage />} /></Routes>;
   return (
     <>
       <Routes>

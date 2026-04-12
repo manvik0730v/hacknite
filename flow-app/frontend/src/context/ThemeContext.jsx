@@ -3,26 +3,15 @@ import { createContext, useContext, useState, useEffect } from 'react';
 const ThemeContext = createContext();
 
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'auto');
-
-  const sinMode = theme === 'sincity';
-
-  const getEffectiveTheme = () => {
-    if (theme === 'auto') {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'night' : 'day';
-    }
-    return theme;
-  };
+  const [sinMode, setSinMode] = useState(() => localStorage.getItem('sinMode') === 'true');
 
   useEffect(() => {
-    localStorage.setItem('theme', theme);
-    const effective = getEffectiveTheme();
-    document.body.className = '';
-    document.body.classList.add(`theme-${effective}`);
-  }, [theme]);
+    localStorage.setItem('sinMode', sinMode);
+    document.body.className = sinMode ? 'theme-sincity' : 'theme-uptown';
+  }, [sinMode]);
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, sinMode, getEffectiveTheme }}>
+    <ThemeContext.Provider value={{ sinMode, setSinMode }}>
       {children}
     </ThemeContext.Provider>
   );
