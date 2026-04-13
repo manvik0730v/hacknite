@@ -3,6 +3,7 @@ const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
 const UserQuest = require('../models/UserQuest');
 const User = require('../models/User');
+const ActivityLog = require('../models/ActivityLog');
 
 const UPTOWN_QUESTS = [
   { id:1,  mode:'uptown', title:'System Test Run',      description:'Run for 10 seconds',            goalType:'time',           goalValue:10,   xp:1000  },
@@ -28,6 +29,16 @@ const SINCITY_QUESTS = [
 ];
 
 const ALL_QUESTS = [...UPTOWN_QUESTS, ...SINCITY_QUESTS];
+
+async function logActivity(uid) {
+  const today = new Date();
+  const dateKey = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+  await ActivityLog.findOneAndUpdate(
+    { uid, date: dateKey },
+    { uid, date: dateKey },
+    { upsert: true, new: true }
+  );
+}
 
 async function updateStreak(user) {
   const today = new Date(); today.setHours(0,0,0,0);
@@ -64,8 +75,11 @@ router.post('/complete', protect, async (req, res) => {
   const user = await User.findOne({ uid: req.user.uid });
   user.xp = (user.xp || 0) + quest.xp;
   await updateStreak(user);
+  await logActivity(req.user.uid);
   await user.save();
-  const completedCount = await UserQuest.countDocuments({ userId: req.user.uid, questId: { $in: UPTOWN_QUESTS.map(q=>q.id) } });
+  const completedCount = await UserQuest.countDocuments({
+    userId: req.user.uid, questId: { $in: UPTOWN_QUESTS.map(q=>q.id) }
+  });
   res.json({ xp: user.xp, gained: quest.xp, streak: user.streak, isFirstUptownQuest: completedCount === 1 });
 });
 

@@ -93,14 +93,10 @@ export default function FriendsPage() {
 
   const fetchAll = async () => {
     try {
-      const [f, r, u] = await Promise.all([
-        API.get('/api/friends'),
-        API.get('/api/friends/requests'),
-        API.get('/api/friends/users'),
-      ]);
-      setFriends(f.data);
-      setRequests(r.data);
-      setAllUsers(u.data);
+      const res = await API.get('/api/friends/all');
+      setFriends(res.data.friends);
+      setRequests(res.data.requests);
+      setAllUsers(res.data.allUsers);
     } catch (err) { console.error(err); }
   };
 

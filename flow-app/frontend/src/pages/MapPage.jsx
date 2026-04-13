@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { MapContainer, TileLayer, Polyline, Marker, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Polyline, Marker, useMap, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
 import { useTheme } from '../context/ThemeContext';
 import { useStory } from '../context/StoryContext';
@@ -195,7 +195,7 @@ export default function MapPage() {
       {/* Map */}
       <div className="relative" style={{ height:'60vh' }}>
         {currentPos ? (
-          <MapContainer center={currentPos} zoom={15} style={{ height:'100%', width:'100%' }} zoomControl={true}>
+          <MapContainer center={currentPos} zoom={15} style={{ height:'100%', width:'100%' }} zoomControl={false}><ZoomControl position="bottomleft" />
             <TileLayer
               url={sinMode
                 ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'

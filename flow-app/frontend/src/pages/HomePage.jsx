@@ -26,20 +26,22 @@ export default function HomePage() {
   const [pickerYear, setPickerYear] = useState(today.getFullYear());
   const [pickerMonth, setPickerMonth] = useState(today.getMonth());
 
-  useEffect(() => {
-    API.get('/api/runs').then(res => {
+useEffect(() => {
+    Promise.all([
+      API.get('/api/runs/activity'),
+      API.get('/api/runs')
+    ]).then(([actRes, runsRes]) => {
       const map = {};
+      actRes.data.forEach(dateKey => { map[dateKey] = true; });
+      setActiveDays(map);
       const byDay = {};
-      res.data.forEach(r => {
+      runsRes.data.forEach(r => {
         const d = new Date(r.date || r.createdAt);
         const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-        map[key] = true;
         if (!byDay[key]) byDay[key] = [];
         byDay[key].push(r);
       });
-      setActiveDays(map);
       setRunsByDay(byDay);
-      setAllRuns(res.data);
     }).catch(() => {});
   }, []);
 

@@ -54,9 +54,7 @@ export default function QuestPage() {
       <div className="px-4 pt-5 pb-3 flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-black text-[var(--text)]">{sinMode ? 'SinCity Quests' : 'Quests'}</h1>
-          <p className={`text-xs ${sinMode?'text-red-400':'text-blue-400'}`}>
-            {sinMode ? 'Prove your dominance' : 'Build your fitness'}
-          </p>
+
         </div>
         <div className="glass-card px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1 text-[var(--text)]">
           <FiCheckCircle size={12} />{completed.length}/{quests.length}

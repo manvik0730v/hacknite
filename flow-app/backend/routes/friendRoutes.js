@@ -12,11 +12,24 @@ function addLevel(user) {
   return obj;
 }
 
-router.get('/', protect, async (req, res) => {
-  const user = await User.findOne({ uid: req.user.uid });
-  const friends = await User.find({ uid: { $in: user.friends || [] } })
-    .select('uid username profilePhoto streak stats xp');
-  res.json(friends.map(addLevel));
+// Single endpoint that returns everything the friends page needs
+router.get('/all', protect, async (req, res) => {
+  const [user, requests, allUsers] = await Promise.all([
+    User.findOne({ uid: req.user.uid }).select('friends xp'),
+    FriendRequest.find({ toUid: req.user.uid, status: 'pending' }),
+    User.find({ uid: { $ne: req.user.uid } }).select('uid username profilePhoto xp streak').limit(30)
+  ]);
+  const friendUids = user?.friends || [];
+  const [friends, requestUsers] = await Promise.all([
+    User.find({ uid: { $in: friendUids } }).select('uid username profilePhoto streak xp'),
+    Promise.all(requests.map(r => User.findOne({ uid: r.fromUid }).select('uid username profilePhoto')))
+  ]);
+  const requestsWithUsers = requests.map((r, i) => ({ ...r.toObject(), from: requestUsers[i] }));
+  res.json({
+    friends: friends.map(addLevel),
+    requests: requestsWithUsers,
+    allUsers: allUsers.map(addLevel)
+  });
 });
 
 router.get('/users', protect, async (req, res) => {
@@ -28,10 +41,11 @@ router.get('/users', protect, async (req, res) => {
 });
 
 router.get('/profile/:uid', protect, async (req, res) => {
-  const user = await User.findOne({ uid: req.params.uid })
-    .select('uid username profilePhoto streak stats xp');
+  const [user, donCount] = await Promise.all([
+    User.findOne({ uid: req.params.uid }).select('uid username profilePhoto streak stats xp'),
+    District.countDocuments({ donUid: req.params.uid })
+  ]);
   if (!user) return res.status(404).json({ error: 'User not found' });
-  const donCount = await District.countDocuments({ donUid: req.params.uid });
   const obj = addLevel(user);
   obj.districtsDon = donCount;
   res.json(obj);
@@ -43,23 +57,16 @@ router.post('/request', protect, async (req, res) => {
   if (reverseRequest) {
     reverseRequest.status = 'accepted';
     await reverseRequest.save();
-    await User.findOneAndUpdate({ uid: req.user.uid }, { $addToSet: { friends: toUid } });
-    await User.findOneAndUpdate({ uid: toUid }, { $addToSet: { friends: req.user.uid } });
+    await Promise.all([
+      User.findOneAndUpdate({ uid: req.user.uid }, { $addToSet: { friends: toUid } }),
+      User.findOneAndUpdate({ uid: toUid }, { $addToSet: { friends: req.user.uid } })
+    ]);
     return res.json({ autoAccepted: true });
   }
   const existing = await FriendRequest.findOne({ fromUid: req.user.uid, toUid, status: 'pending' });
   if (existing) return res.status(400).json({ error: 'Request already sent' });
   const newReq = await FriendRequest.create({ fromUid: req.user.uid, toUid });
   res.json(newReq);
-});
-
-router.get('/requests', protect, async (req, res) => {
-  const requests = await FriendRequest.find({ toUid: req.user.uid, status: 'pending' });
-  const withUsers = await Promise.all(requests.map(async r => {
-    const from = await User.findOne({ uid: r.fromUid }).select('uid username profilePhoto');
-    return { ...r.toObject(), from };
-  }));
-  res.json(withUsers);
 });
 
 router.post('/respond', protect, async (req, res) => {
@@ -69,8 +76,10 @@ router.post('/respond', protect, async (req, res) => {
   request.status = action;
   await request.save();
   if (action === 'accepted') {
-    await User.findOneAndUpdate({ uid: request.toUid },   { $addToSet: { friends: request.fromUid } });
-    await User.findOneAndUpdate({ uid: request.fromUid }, { $addToSet: { friends: request.toUid } });
+    await Promise.all([
+      User.findOneAndUpdate({ uid: request.toUid },   { $addToSet: { friends: request.fromUid } }),
+      User.findOneAndUpdate({ uid: request.fromUid }, { $addToSet: { friends: request.toUid } })
+    ]);
   }
   res.json({ success: true });
 });
