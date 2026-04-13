@@ -9,7 +9,12 @@ const app = express();
 connectDB();
 
 app.get('/', (req, res) => res.json({ message: 'SinCity Stride API running' }));
-app.use(cors({ origin: 'http://localhost:5173' }));
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    'https://sincity-stride.vercel.app'  // your actual Vercel URL
+  ]
+}));
 app.use(helmet());
 app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
