@@ -20,6 +20,7 @@ app.use('/api/quests',    require('./routes/questRoutes').router);
 app.use('/api/runs',      require('./routes/runRoutes'));
 app.use('/api/friends',   require('./routes/friendRoutes'));
 app.use('/api/districts', require('./routes/districtRoutes'));
+app.use('/api/story',     require('./routes/storyRoutes'));
 
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => console.log(`Server on port ${PORT}`));

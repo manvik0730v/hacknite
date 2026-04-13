@@ -11,6 +11,8 @@ const UserSchema = new mongoose.Schema({
   xp: { type: Number, default: 0 },
   streak: { type: Number, default: 0 },
   lastActiveDate: Date,
+  seenStoryEvents: [{ type: String }],
+  hasVisitedSincityMap: { type: Boolean, default: false },
   badges: [{ name: String, description: String, icon: String, earnedAt: Date }],
   stats: {
     longestRun: { type: Number, default: 0 },

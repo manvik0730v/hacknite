@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { StoryProvider } from './context/StoryContext';
+import StoryOverlay from './components/StoryOverlay';
 import BottomNav from './components/BottomNav';
 import LoginPage from './pages/LoginPage';
 import HomePage from './pages/HomePage';
@@ -25,6 +27,7 @@ function AppRoutes() {
         <Route path="*"        element={<Navigate to="/home" />} />
       </Routes>
       <BottomNav />
+      <StoryOverlay />
     </>
   );
 }
@@ -34,7 +37,9 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <ThemeProvider>
-          <AppRoutes />
+          <StoryProvider>
+            <AppRoutes />
+          </StoryProvider>
         </ThemeProvider>
       </AuthProvider>
     </BrowserRouter>

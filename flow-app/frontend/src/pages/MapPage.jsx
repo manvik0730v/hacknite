@@ -2,16 +2,20 @@ import { useEffect, useState, useRef } from 'react';
 import { MapContainer, TileLayer, Polyline, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { useTheme } from '../context/ThemeContext';
+import { useStory } from '../context/StoryContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FiPlay, FiSquare, FiSearch, FiCheckCircle, FiNavigation } from 'react-icons/fi';
 import { GiCrown } from 'react-icons/gi';
 import API from '../services/api';
-import locImg from '../assets/loc.svg';
+import locImg  from '../assets/loc.svg';
 import locImg2 from '../assets/loc2.svg';
+import manSvg  from '../assets/man.svg';
 
-function createIcon(src) {
-  return new L.Icon({ iconUrl: src, iconSize: [24, 60], iconAnchor: [12, 60] });
+function createIcon(src, size=[24,60], anchor=[12,60]) {
+  return new L.Icon({ iconUrl: src, iconSize: size, iconAnchor: anchor });
 }
+
+const MAN_POSITION = [12.9352, 77.6245]; // Electronic City area
 
 function RecenterMap({ position }) {
   const map = useMap();
@@ -32,9 +36,9 @@ function LocateButton({ onLocate }) {
     <div className="leaflet-bottom leaflet-right" style={{ marginBottom: '12px', marginRight: '12px' }}>
       <div className="leaflet-control leaflet-bar">
         <button onClick={handle}
-          style={{ width: 36, height: 36, borderRadius: '8px', background: 'white',
-            border: 'none', display: 'flex', alignItems: 'center',
-            justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.25)', cursor: 'pointer' }}>
+          style={{ width:36, height:36, borderRadius:'8px', background:'white', border:'none',
+            display:'flex', alignItems:'center', justifyContent:'center',
+            boxShadow:'0 2px 8px rgba(0,0,0,0.25)', cursor:'pointer' }}>
           <FiNavigation size={16} color="#1a56db" />
         </button>
       </div>
@@ -44,6 +48,7 @@ function LocateButton({ onLocate }) {
 
 export default function MapPage() {
   const { sinMode } = useTheme();
+  const { triggerStory, hasSeen, markSincityMapVisited, hasVisitedSincityMap } = useStory();
   const location = useLocation();
   const nav = useNavigate();
   const quest = location.state?.quest || null;
@@ -61,7 +66,18 @@ export default function MapPage() {
   const startTime = useRef(null);
   const timerRef = useRef(null);
 
-  const icon = sinMode ? createIcon(locImg2) : createIcon(locImg);
+  const locIcon = sinMode ? createIcon(locImg2) : createIcon(locImg);
+  const manIcon = createIcon(manSvg, [36, 36], [18, 36]);
+
+  // Trigger first sincity map story
+  useEffect(() => {
+    if (sinMode && !hasSeen('first_sincity_map')) {
+      markSincityMapVisited();
+      setTimeout(() => triggerStory('first_sincity_map'), 800);
+    } else if (sinMode && !hasVisitedSincityMap) {
+      markSincityMapVisited();
+    }
+  }, [sinMode]);
 
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
@@ -88,39 +104,32 @@ export default function MapPage() {
   }, [running, quest, questDone]);
 
   useEffect(() => {
-    if (quest && !questDone && quest.goalType === 'distance' && stats.distance >= quest.goalValue) setQuestDone(true);
-    if (quest && !questDone && quest.goalType === 'distanceInTime') {
-      if (stats.distance >= quest.goalValue && stats.duration <= quest.timeLimit) setQuestDone(true);
-    }
+    if (!quest || questDone) return;
+    if (quest.goalType === 'distance' && stats.distance >= quest.goalValue) setQuestDone(true);
+    if (quest.goalType === 'distanceInTime' && stats.distance >= quest.goalValue && stats.duration <= quest.timeLimit) setQuestDone(true);
   }, [stats]);
 
   const startRun = () => {
-    setRoute([]); setStats({ distance: 0, duration: 0 }); setQuestDone(false);
-    startTime.current = Date.now();
-    setRunning(true);
+    setRoute([]); setStats({ distance:0, duration:0 }); setQuestDone(false);
+    startTime.current = Date.now(); setRunning(true);
     watchId.current = navigator.geolocation.watchPosition(
       pos => {
         const point = [pos.coords.latitude, pos.coords.longitude];
         setCurrentPos(point);
-        setRoute(prev => {
-          const nr = [...prev, point];
-          setStats(s => ({ ...s, distance: calcDist(nr) }));
-          return nr;
-        });
+        setRoute(prev => { const nr=[...prev,point]; setStats(s=>({...s,distance:calcDist(nr)})); return nr; });
       },
       err => console.error(err),
-      { enableHighAccuracy: true, maximumAge: 0 }
+      { enableHighAccuracy:true, maximumAge:0 }
     );
   };
 
   const stopRun = () => {
     navigator.geolocation.clearWatch(watchId.current);
-    setRunning(false);
-    clearInterval(timerRef.current);
-    const duration = Math.floor((Date.now() - startTime.current) / 1000);
+    setRunning(false); clearInterval(timerRef.current);
+    const duration = Math.floor((Date.now()-startTime.current)/1000);
     const distance = calcDist(route);
-    const pace = distance > 0 ? parseFloat(((duration/60)/(distance/1000)).toFixed(2)) : 0;
-    setLastRunData({ duration, distance, pace, steps: Math.floor(distance*1.3), calories: Math.floor(distance*0.06), route });
+    const pace = distance>0 ? parseFloat(((duration/60)/(distance/1000)).toFixed(2)) : 0;
+    setLastRunData({ duration, distance, pace, steps:Math.floor(distance*1.3), calories:Math.floor(distance*0.06), route });
     setShowSaveModal(true);
   };
 
@@ -128,14 +137,41 @@ export default function MapPage() {
     try {
       await API.post('/api/runs', {
         ...lastRunData,
-        route: lastRunData.route.map(p => ({ lat: p[0], lng: p[1], timestamp: Date.now() })),
+        route: lastRunData.route.map(p=>({lat:p[0],lng:p[1],timestamp:Date.now()})),
         date: new Date()
       });
-      if (quest && questDone) await API.post('/api/quests/complete', { questId: quest.id });
+      let isFirstUptown = false;
+      if (quest) {
+        if (questDone) {
+          const res = await API.post('/api/quests/complete', { questId: quest.id });
+          isFirstUptown = res.data.isFirstUptownQuest && !sinMode;
+        }
+      }
       setShowSaveModal(false);
       await fetchDistricts();
-      nav('/profile');
+
+      // Trigger story after save modal is gone
+      if (quest?.id === 107) {
+        // Special quest — check if completed or failed
+        if (questDone) {
+          setTimeout(() => triggerStory('special_quest_complete', () => nav('/profile')), 300);
+        } else {
+          setTimeout(() => triggerStory('special_quest_fail', () => nav('/profile')), 300);
+        }
+      } else if (isFirstUptown) {
+        setTimeout(() => triggerStory('first_uptown_quest', () => nav('/profile')), 300);
+      } else {
+        nav('/profile');
+      }
     } catch (err) { console.error(err); }
+  };
+
+  const discardRun = () => {
+    setShowSaveModal(false); setLastRunData(null); setRoute([]);
+    // Special quest fail on discard
+    if (quest?.id === 107 && !questDone) {
+      setTimeout(() => triggerStory('special_quest_fail'), 300);
+    }
   };
 
   const fmt = s => `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
@@ -144,21 +180,20 @@ export default function MapPage() {
 
   return (
     <div className="min-h-screen pb-20">
-      {/* Quest banner */}
       {quest && (
         <div className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold
           ${sinMode ? 'bg-red-950 text-red-300' : 'bg-blue-700 text-white'}`}>
           <span>{quest.title}</span>
           <span className="ml-auto">
-            {quest.goalType === 'time' ? `${fmt(stats.duration)} / ${fmt(quest.goalValue)}`
+            {quest.goalType==='time' ? `${fmt(stats.duration)} / ${fmt(quest.goalValue)}`
               : `${(stats.distance/1000).toFixed(2)}km / ${(quest.goalValue/1000).toFixed(1)}km`}
           </span>
           {questDone && <FiCheckCircle className="text-green-400" size={16} />}
         </div>
       )}
 
-      {/* Full screen map */}
-      <div className="relative" style={{ height: '60vh' }}>
+      {/* Map */}
+      <div className="relative" style={{ height:'60vh' }}>
         {currentPos ? (
           <MapContainer center={currentPos} zoom={15} style={{ height:'100%', width:'100%' }} zoomControl={true}>
             <TileLayer
@@ -167,10 +202,9 @@ export default function MapPage() {
                 : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'}
               attribution='&copy; OpenStreetMap'
             />
-            {route.length > 1 && (
-              <Polyline positions={route} color={sinMode?'#cc0000':'#1a56db'} weight={5} />
-            )}
-            <Marker position={currentPos} icon={icon} />
+            {route.length>1 && <Polyline positions={route} color={sinMode?'#cc0000':'#1a56db'} weight={5} />}
+            <Marker position={currentPos} icon={locIcon} />
+            {sinMode && <Marker position={MAN_POSITION} icon={manIcon} />}
             <RecenterMap position={running ? currentPos : null} />
             <LocateButton onLocate={setCurrentPos} />
           </MapContainer>
@@ -180,7 +214,6 @@ export default function MapPage() {
           </div>
         )}
 
-        {/* Running stats overlay */}
         {running && (
           <div className="absolute top-3 left-3 right-3 z-[1000] glass-card px-4 py-3 flex justify-around">
             <div className="text-center">
@@ -194,7 +227,6 @@ export default function MapPage() {
           </div>
         )}
 
-        {/* Play/Stop on map */}
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000]">
           <button onClick={running ? stopRun : startRun}
             className={`w-16 h-16 rounded-full flex items-center justify-center shadow-2xl border-4 transition-all active:scale-95 btn-lift
@@ -205,8 +237,8 @@ export default function MapPage() {
         </div>
       </div>
 
-      {/* SinCity only: My districts */}
-      {sinMode && myDonDistricts.length > 0 && (
+      {/* SinCity districts */}
+      {sinMode && myDonDistricts.length>0 && (
         <div className="px-4 mt-4">
           <p className="text-xs font-bold text-red-400 uppercase tracking-wider mb-2">Your Districts</p>
           <div className="flex flex-col gap-2">
@@ -214,8 +246,8 @@ export default function MapPage() {
               <div key={d.name} className="glass-card p-3 flex items-center gap-3 btn-lift">
                 <GiCrown size={20} className="text-yellow-400 flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="font-bold text-white text-sm">{d.name}</p>
-                  <p className="text-xs text-gray-400">{(d.myDistance/1000).toFixed(2)} km covered</p>
+                  <p className="font-bold text-sm text-[var(--text)]">{d.name}</p>
+                  <p className="text-xs text-[var(--text2)]">{(d.myDistance/1000).toFixed(2)} km</p>
                 </div>
                 <span className="text-xs text-yellow-400 font-bold">Don</span>
               </div>
@@ -224,41 +256,30 @@ export default function MapPage() {
         </div>
       )}
 
-      {/* Districts list */}
       <div className="px-4 mt-4">
-        <p className={`text-xs font-bold uppercase tracking-wider mb-2 ${sinMode?'text-red-400':'text-blue-400'}`}>
-          Bangalore Districts
-        </p>
+        <p className={`text-xs font-bold uppercase tracking-wider mb-2 ${sinMode?'text-red-400':'text-blue-400'}`}>Bangalore Districts</p>
         <div className="glass-card flex items-center gap-2 px-3 py-2.5 mb-3">
           <FiSearch size={16} className="text-[var(--text2)]" />
-          <input
-            className="flex-1 bg-transparent text-[var(--text)] text-sm outline-none placeholder:text-[var(--text2)]"
-            placeholder="Search districts..."
-            value={districtSearch}
-            onChange={e => setDistrictSearch(e.target.value)}
-          />
+          <input className="flex-1 bg-transparent text-[var(--text)] text-sm outline-none placeholder:text-[var(--text2)]"
+            placeholder="Search districts..." value={districtSearch} onChange={e=>setDistrictSearch(e.target.value)} />
         </div>
         <div className="flex flex-col gap-2 mb-4">
           {filteredDistricts.map(d => (
             <div key={d.name} className="glass-card p-3 btn-lift flex items-center gap-3">
               <div className="flex-1">
                 <p className="font-bold text-sm text-[var(--text)]">{d.name}</p>
-                <p className="text-xs text-[var(--text2)] mt-0.5">
-                  You: {(d.myDistance/1000).toFixed(2)} km
-                </p>
+                <p className="text-xs text-[var(--text2)] mt-0.5">You: {(d.myDistance/1000).toFixed(2)} km</p>
               </div>
               {sinMode && (
                 <div className="text-right">
                   {d.donUsername ? (
                     <div className="flex items-center gap-1">
                       <GiCrown size={12} className="text-yellow-500" />
-                      <span className={`text-xs font-bold ${d.iAmDon ? 'text-yellow-500' : 'text-[var(--text2)]'}`}>
-                        {d.iAmDon ? 'You' : d.donUsername}
+                      <span className={`text-xs font-bold ${d.iAmDon?'text-yellow-500':'text-[var(--text2)]'}`}>
+                        {d.iAmDon?'You':d.donUsername}
                       </span>
                     </div>
-                  ) : (
-                    <span className="text-xs text-[var(--text2)]">Not conquered</span>
-                  )}
+                  ) : <span className="text-xs text-[var(--text2)]">Not conquered</span>}
                 </div>
               )}
             </div>
@@ -266,12 +287,12 @@ export default function MapPage() {
         </div>
       </div>
 
-      {/* Save modal — always centered */}
+      {/* Save modal */}
       {showSaveModal && lastRunData && (
         <div className="fixed inset-0 z-[2000] flex items-center justify-center px-4"
-          style={{ backgroundColor: 'rgba(0,0,0,0.65)' }}>
-          <div className={`w-full max-w-sm rounded-3xl p-6 ${sinMode ? 'bg-[#140000] border border-red-900' : 'bg-white'}`}
-            style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}>
+          style={{ backgroundColor:'rgba(0,0,0,0.65)' }}>
+          <div className={`w-full max-w-sm rounded-3xl p-6 ${sinMode?'bg-[#140000] border border-red-900':'bg-white'}`}
+            style={{ boxShadow:'0 20px 60px rgba(0,0,0,0.4)' }}>
             <h2 className="text-xl font-black text-[var(--text)] mb-4 text-center">Save this run?</h2>
             <div className="grid grid-cols-2 gap-3 mb-4">
               {[
@@ -287,13 +308,12 @@ export default function MapPage() {
               ))}
             </div>
             {quest && questDone && (
-              <div className={`rounded-xl p-3 mb-4 text-center text-sm font-bold
-                ${sinMode ? 'bg-red-950 text-red-300' : 'bg-green-50 text-green-700'}`}>
-                Quest "{quest.title}" completed! +{quest.xp.toLocaleString()} XP
+              <div className={`rounded-xl p-3 mb-4 text-center text-sm font-bold ${sinMode?'bg-red-950 text-red-300':'bg-green-50 text-green-700'}`}>
+                Quest "{quest.title}" completed! +{quest.xp?.toLocaleString()} XP
               </div>
             )}
             <div className="flex gap-3">
-              <button onClick={() => { setShowSaveModal(false); setLastRunData(null); }}
+              <button onClick={discardRun}
                 className="flex-1 py-3.5 rounded-2xl border border-[var(--border)] text-[var(--text)] font-bold btn-lift">
                 Discard
               </button>
@@ -310,14 +330,14 @@ export default function MapPage() {
 }
 
 function calcDist(route) {
-  let total = 0;
-  for (let i = 1; i < route.length; i++) {
-    const R = 6371e3;
-    const φ1 = route[i-1][0]*Math.PI/180, φ2 = route[i][0]*Math.PI/180;
-    const Δφ = (route[i][0]-route[i-1][0])*Math.PI/180;
-    const Δλ = (route[i][1]-route[i-1][1])*Math.PI/180;
-    const a = Math.sin(Δφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
-    total += R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+  let total=0;
+  for(let i=1;i<route.length;i++){
+    const R=6371e3;
+    const φ1=route[i-1][0]*Math.PI/180,φ2=route[i][0]*Math.PI/180;
+    const Δφ=(route[i][0]-route[i-1][0])*Math.PI/180;
+    const Δλ=(route[i][1]-route[i-1][1])*Math.PI/180;
+    const a=Math.sin(Δφ/2)**2+Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
+    total+=R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
   }
   return Math.floor(total);
 }
