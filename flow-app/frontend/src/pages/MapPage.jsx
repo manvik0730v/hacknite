@@ -29,13 +29,13 @@ function LocateButton({ onLocate }) {
     });
   };
   return (
-    <div className="leaflet-bottom leaflet-right" style={{ marginBottom: '80px', marginRight: '12px' }}>
-      <div className="leaflet-control">
+    <div className="leaflet-bottom leaflet-right" style={{ marginBottom: '12px', marginRight: '12px' }}>
+      <div className="leaflet-control leaflet-bar">
         <button onClick={handle}
-          style={{ width: 40, height: 40, borderRadius: '50%', background: 'white',
-            border: '2px solid #ccc', display: 'flex', alignItems: 'center',
-            justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.2)', cursor: 'pointer' }}>
-          <FiNavigation size={18} color="#1a56db" />
+          style={{ width: 36, height: 36, borderRadius: '8px', background: 'white',
+            border: 'none', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.25)', cursor: 'pointer' }}>
+          <FiNavigation size={16} color="#1a56db" />
         </button>
       </div>
     </div>

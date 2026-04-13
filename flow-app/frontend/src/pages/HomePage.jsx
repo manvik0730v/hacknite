@@ -5,6 +5,7 @@ import API from '../services/api';
 import { useEffect, useState } from 'react';
 import { FiChevronLeft, FiChevronRight, FiRefreshCw } from 'react-icons/fi';
 import logo from '../assets/logo.svg';
+import logo2 from '../assets/logo2.svg';
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
@@ -87,7 +88,7 @@ export default function HomePage() {
 
       {/* Logo */}
       <div className="flex justify-center px-6 mb-5">
-        <img src={logo} alt="SinCity Stride" className="w-full max-w-xs h-28 object-contain drop-shadow-lg" />
+        <img src={sinMode ? logo : logo2} alt="SinCity Stride" className="w-full max-w-xs h-28 object-contain drop-shadow-lg" />
       </div>
 
       {/* Calendar card */}
