@@ -6,11 +6,10 @@
 
 ---
 
-## 📖 Table of Contents
+##  Table of Contents
 
 - [Overview](#-overview)
 - [Tech Stack](#-tech-stack)
-- [Architecture](#-architecture)
 - [Features](#-features)
 - [App Flow](#-app-flow)
 - [Database Schema](#-database-schema)
@@ -24,7 +23,7 @@
 
 ---
 
-## 🌆 Overview
+##  Overview
 
 Many users struggle with consistency during their fitness journey. **SinCity Stride** solves this by transforming fitness tracking into a game — complete missions, level up, capture regions, and battle friends in a dual-world narrative experience.
 
@@ -32,12 +31,12 @@ The app features two distinct modes:
 
 | Mode | Theme | Characters |
 |------|-------|------------|
-| 🌇 **Uptown Mode** | Clean, motivating, everyday fitness | Aarav & Mira (casual) |
-| 🌃 **SinCity Mode** | Dark, intense, tactical conquest | Aarav & Mira (badass) |
+|  **Uptown Mode** | Clean, motivating, everyday fitness | Aarav & Mira (casual) |
+|  **SinCity Mode** | Dark, intense, tactical conquest | Aarav & Mira (badass) |
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 ```mermaid
 graph TD
@@ -57,91 +56,39 @@ graph TD
 ```
 ---
 
-## 🏗️ Architecture
+## Features
 
-```mermaid
-graph TB
-    subgraph Client["🖥️ Frontend (React + Tailwind)"]
-        UI[React UI Components]
-        FM[Firebase Auth Module]
-        MS[Map Service]
-        SS[State / Context]
-    end
-
-    subgraph Server["⚙️ Backend (Node.js + Express)"]
-        API[REST API Routes]
-        MW[Firebase Token Middleware]
-        CTRL[Controllers]
-    end
-
-    subgraph DB["🗄️ Database (MongoDB Atlas)"]
-        Users[(Users Collection)]
-        Runs[(Runs Collection)]
-        Quests[(Quests Collection)]
-        Friends[(Friends Collection)]
-        Regions[(Regions Collection)]
-    end
-
-    subgraph External["🌐 External Services"]
-        FB[Firebase Auth]
-        MAPS[Maps API]
-    end
-
-    UI --> FM
-    UI --> MS
-    FM --> FB
-    MS --> MAPS
-    UI -->|"HTTP + Bearer Token"| API
-    API --> MW
-    MW -->|Verify Token| FB
-    CTRL --> Users
-    CTRL --> Runs
-    CTRL --> Quests
-    CTRL --> Friends
-    CTRL --> Regions
-    API --> CTRL
-```
-
----
-
-## ✨ Features
-
-### 🏠 Home Page
-- Personalized greeting: *"Hi! username"*
-- 2×2 stats dashboard: Daily Steps · Level · Daily Streak · Calories Burned
-- Ongoing quests preview
-- Weekly step histogram
+###  Home Page
+- Personalized greeting: *"Hi! username"* (top left)
+- Activity Calendar with persistent streak markers
+- Can see the running logs of any day from 1960 to 2060
 - SinCity / Uptown mode toggle (top right)
 
-### 🗺️ Map
+###  Map
 - Live GPS route tracking during runs
 - Play / Pause run timer
 - Run data saved to MongoDB
 - Zoom controls (bottom-left, non-obstructing)
-- **SinCity Mode:** Glowing neon regions to capture, collaboration system
+- **SinCity Mode:** Stranger man's photo added in the map for the special quest
 
-### ⚔️ Quests
-- Daily + level-based quests
-- Progress fill bars per quest
+###  Quests
+- 10 quests provided for the Uptown mode
+- XP count
 - Completed tasks indicator
-- Uptown Quests + SinCity Quests (7 total in SinCity)
+- SinCity Quests (7 total in SinCity)
 - Special locked Quest #7 (unlocked after visiting SinCity map)
 
-### 👥 Friends
-- View friends' profiles (username, photo, level, badges, W/L ratio)
-- Add friends via `+` button
-- Challenge friends in live runs
-- W/L ratio tracking per friend
+###  Friends
+- View friends' profiles (username, photo, level, streak, best pace)
+- Add friends via `Add` button
 
-### 👤 Profile
+###  Profile
 - Name, email, height, weight, gender, profile photo
-- Badges (clickable with descriptions)
-- All-time records: Longest Run · Best Pace · Regions Captured · Total Calories
+- All-time records: Longest Run · Best Pace · Regions Captured
 - Total XP (Uptown + SinCity combined)
 - "My Runs" history with delete option
-- Activity Calendar with persistent streak markers
 
-### 🎭 Story Mode (SinCity)
+### Story Mode 
 - Cinematic dialogue sequences with Aarav, Mira & The Stranger
 - Skip option available at every dialogue block
 - Each animation plays only **once per user account**
@@ -149,42 +96,31 @@ graph TB
 
 ---
 
-## 🔄 App Flow
+##  App Flow
 
 ```mermaid
 flowchart TD
-    A([Open App]) --> B{First Time User?}
-    B -->|Yes| C[Login / Sign Up - Firebase]
-    B -->|No| D[Login - Firebase]
+    A([Open Web App]) --> C[Login / Sign Up - Firebase]
     C --> E[First-Time Setup\nUsername · Height · Weight · Gender]
     E --> F[Home Page - Uptown Mode]
-    D --> F
 
     F --> G{Navigate}
-    G --> H[🗺️ Map]
-    G --> I[⚔️ Quests]
-    G --> J[👥 Friends]
-    G --> K[👤 Profile]
+    G --> H[Map]
+    G --> I[Quests]
+    G --> J[Friends]
+    G --> K[Profile]
 
-    H --> L{SinCity Mode?}
-    L -->|Yes| M[Neon Region Map\nCapture Regions]
-    L -->|No| N[Normal Run Tracker]
+    H --> N[Normal Run Tracker]
     N --> O[Start Timer → Track Run → Save]
-    M --> O
 
-    I --> P{Quest Type}
-    P --> Q[Daily Quests]
-    P --> R[Level Quests]
-    P --> S[Special Quest #7\nUnlocked via SinCity Map]
-
-    K --> T[View Stats & Badges]
+    K --> T[View Profile Details]
     K --> U[My Runs History]
     U --> V[Delete Run\nStreak preserved if run once occurred]
 ```
 
 ---
 
-## 🗃️ Database Schema
+##  Database Schema
 
 ```mermaid
 erDiagram
@@ -262,7 +198,7 @@ erDiagram
 
 ```mermaid
 sequenceDiagram
-    participant U as 👤 User
+    participant U as  User
     participant FE as React Frontend
     participant FB as Firebase Auth
     participant BE as Express Backend
@@ -506,7 +442,7 @@ graph LR
 ```
 
 - **Frontend:** Deployed on [Vercel](https://vercel.com) at `sincitystride.vercel.app`
-- **Backend:** Express server deployed separately
+- **Backend:** Express server deployed separately on Render at `https://sin-city-stride.onrender.com`
 - **Database:** MongoDB Atlas (cloud-hosted)
 - **Auth:** Firebase Authentication
 
