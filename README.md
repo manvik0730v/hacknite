@@ -1,160 +1,350 @@
-# 🏙️ SinCity Stride
+# SinCity Stride
 
-> *The streets don't care about your excuses. Run.*
+> *"Movement means control. Distance means power."*
 
-**SinCity Stride** is a gamified fitness web application that transforms your daily runs into a citywide conquest. Complete quests, capture districts, challenge friends, and climb the leaderboard — all powered by real-world movement.
-
-Built for **HackNite 2026** by Zense — Web Development Track.
+**SinCity Stride** is a gamified fitness web application that transforms your running journey into an immersive RPG(Role-Playing Game) style experience. Complete quests, capture map regions, level up, and challenge friends — all while hitting real-world fitness goals.
 
 ---
 
-## 📸 Overview
+## 📖 Table of Contents
 
-| Theme | Description |
-|-------|-------------|
-| **Uptown** | Clean, light mode — minimal and fresh |
-| **SinCity** | Dark, red-accented — cinematic and ruthless |
-
-In **SinCity mode**, the map comes alive. Districts glow red when you own them. The Don/Lord system activates. Story Mode unlocks. The city is yours to conquer.
+- [Overview](#-overview)
+- [Tech Stack](#-tech-stack)
+- [Architecture](#-architecture)
+- [Features](#-features)
+- [App Flow](#-app-flow)
+- [Database Schema](#-database-schema)
+- [Authentication Flow](#-authentication-flow)
+- [Game Modes](#-game-modes)
+- [Quest System](#-quest-system)
+- [Project Structure](#-project-structure)
+- [Getting Started](#-getting-started)
+- [Environment Variables](#-environment-variables)
+- [Deployment](#-deployment)
 
 ---
 
-## ✨ Features
+## 🌆 Overview
 
-### 🔐 Authentication
-- Firebase Authentication (Google + Email/Password)
-- First-login onboarding: set username, height, weight, gender (all skippable)
-- Firebase tokens verified server-side on every protected API call
+Many users struggle with consistency during their fitness journey. **SinCity Stride** solves this by transforming fitness tracking into a game — complete missions, level up, capture regions, and battle friends in a dual-world narrative experience.
 
-### 🏠 Home
-- Personalized greeting: *Hi, username!*
-- Interactive calendar showing active days (days you ran or completed a quest)
-- Scrollable month-by-month calendar navigation
-- Daily streak counter — keep it alive by running or completing a quest each day
-- App logo displayed prominently
-- Theme toggle (Uptown ↔ SinCity) — fixed-width pill switch, never resizes
+The app features two distinct modes:
 
-### ⚡ Quests
-- 10 progressive quests from a 10-second test run to a 5 km milestone
-- Each quest has an XP reward (1,000 → 10,000 XP)
-- Progress bar per quest showing completion status
-- Quests launch the map tracker when clicked
-- Completed quests are permanently marked — XP awarded only once
-- Completing a quest counts as an active day for streak purposes
-
-| # | Quest | Target | XP |
-|---|-------|--------|----|
-| 1 | System Test Run | 10 seconds | 1,000 |
-| 2 | Warm-Up Walk | 5 minutes | 2,000 |
-| 3 | First Short Run | 2 minutes | 3,000 |
-| 4 | 10-Minute Session | 10 minutes | 4,000 |
-| 5 | First Distance | 1 km | 5,000 |
-| 6 | Quick Time Challenge | 5 minutes continuous | 6,000 |
-| 7 | Distance Builder | 2 km | 7,000 |
-| 8 | Endurance Time | 20 minutes | 8,000 |
-| 9 | Distance Push | 3 km | 9,000 |
-| 10 | Beginner Milestone | 5 km | 10,000 |
-
-### 🗺️ Map
-- Full-screen interactive map of Bangalore (OpenStreetMap via Leaflet — **free, no API key**)
-- Play/Pause button overlaid on the map to start/stop run tracking
-- Live GPS location tracking using browser Geolocation API
-- Haversine formula calculates real distance between GPS points
-- 23 predefined Bangalore districts as polygon boundaries
-- Automatically detects which district you're running in
-- Distance added to each district as you move through it
-- Save run dialog appears centered on screen (not hidden by nav bar) with:
-  - Distance (km)
-  - Duration
-  - Average pace (min/km)
-  - Steps
-- Run saved to database and added to run history
-
-#### District List
-Jayanagar · JP Nagar · Banashankari · Basavanagudi · BTM Layout · Bommanahalli · Electronic City · Whitefield · Marathahalli · HSR Layout · Bellandur · Koramangala · Majestic · Indiranagar · MG Road · Brigade Road · Malleswaram · Frazer Town · Hebbal · Yelahanka · Rajajinagar · Yeshwanthpur · Kengeri
-
-#### Scrollable District List (below map)
-- Every district shows your distance covered there
-- Shows current Don/Lord of the district
-- "Unclaimed Territory" if nobody owns it yet
-- Your owned districts appear in a dedicated "Your Territory" section
-
-#### Don / Lord System *(SinCity mode only)*
-- The user with the **most total distance** in a district becomes the **Don**
-- Districts you own **glow red** on the map (cyan in Uptown mode when this is visible)
-- Leaderboard per district showing all runners ranked by distance
-- Owning districts increments your district count on your profile
-- Losing the top spot transfers ownership in real time
-
-### 👥 Friends
-**Section A — Your Network**
-- Lists all current friends with profile picture and stats
-- Incoming friend requests with Accept / Reject buttons
-- "Make new friends" prompt if friend list is empty, scrolls to search
-
-**Section B — Discover Users**
-- Search bar to find any user by username
-- Full list of all registered users
-- Add Friend button → sends a request to their inbox
-- **Mutual request auto-accept**: if User A sends User B a request and User B also sends User A one, they are automatically friends — no conflicting state possible
-- Click any user to view their public profile:
-  - Username, profile picture
-  - Longest run, best pace, streak, districts owned (2×2 grid)
-  - Add Friend button (hidden if already friends)
-
-### 👤 Profile
-- Profile picture with pencil edit button → upload from device
-- Display: username, email, height, weight, gender, XP points
-- All-time records (2×2 grid):
-  - Longest Run
-  - Best Pace
-  - Streak
-  - Districts Owned (as Don)
-- Edit profile: username, height, weight, gender, phone
-- **My Runs** — full history of saved runs with distance, duration, pace, date
-  - Option to delete individual runs (does not affect streak)
-- Logout button at the bottom
-
-### 🎭 Character System
-- A male and female character appear throughout the app
-- Show dialogues on key events: app open, quest complete, run saved, streak milestone
-- **Uptown mode**: casual, friendly appearance and tone
-- **SinCity mode**: same characters, more intense — darker aesthetic, more aggressive dialogue
-
-### 📖 Story Mode *(SinCity mode only)*
-Five-phase narrative driven by real-world activity:
-
-| Phase | NPC | Personality | Key Tasks |
-|-------|-----|-------------|-----------|
-| 1 — Awakening | Kaizen | Calm mentor | Walk 2,000 steps, 2-day streak, 1 quest |
-| 2 — Resistance | Lethargy | Discouraging enemy | Walk 5,000 steps, 2 quests in one day |
-| 3 — Control | Nyx | Analytical strategist | Full tracked run, 5-day streak |
-| 4 — Conquest | Virex | Competitive rival | Capture a district, beat a friend |
-| 5 — Inner War | Abyss | Your dark self | 7-day streak, longest run, 3 hard quests |
-
-- Typewriter-effect dialogue
-- Success / failure / quit states
-- Quit penalty dialogue: *"You have become soft and weak, [username]. Get gud."*
+| Mode | Theme | Characters |
+|------|-------|------------|
+| 🌇 **Uptown Mode** | Clean, motivating, everyday fitness | Aarav & Mira (casual) |
+| 🌃 **SinCity Mode** | Dark, intense, tactical conquest | Aarav & Mira (badass) |
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React 18 + Vite |
-| Styling | Tailwind CSS + CSS Variables |
-| Animations | Framer Motion |
-| Routing | React Router v6 |
-| Icons | React Icons |
-| Maps | Leaflet + React Leaflet (OpenStreetMap) |
-| Authentication | Firebase Auth (Google + Email/Password) |
-| Backend | Node.js + Express |
-| Database | MongoDB Atlas + Mongoose |
-| Token Verification | Firebase Admin SDK |
-| HTTP Client | Axios |
-| Dev server | Nodemon |
-| Fonts | Bebas Neue (display) + DM Sans (body) + JetBrains Mono |
+```mermaid
+graph TD
+  A[Frontend - React + Tailwind CSS]
+  B[Backend - Node.js + Express]
+  C[Database - MongoDB Mongoose]
+  D[Auth - Firebase Authentication]
+  E[Maps - OpenStreetMap]
+  F[Hosting - Vercel + Render]
+
+  style A fill:#e3f2fd,stroke:#90caf9,color:#0d47a1
+  style B fill:#e8f5e9,stroke:#81c784,color:#1b5e20
+  style C fill:#f1f8e9,stroke:#aed581,color:#33691e
+  style D fill:#fff8e1,stroke:#ffd54f,color:#ff6f00
+  style E fill:#e1f5fe,stroke:#4fc3f7,color:#01579b
+  style F fill:#f3e5f5,stroke:#ba68c8,color:#4a148c
+```
+---
+
+## 🏗️ Architecture
+
+```mermaid
+graph TB
+    subgraph Client["🖥️ Frontend (React + Tailwind)"]
+        UI[React UI Components]
+        FM[Firebase Auth Module]
+        MS[Map Service]
+        SS[State / Context]
+    end
+
+    subgraph Server["⚙️ Backend (Node.js + Express)"]
+        API[REST API Routes]
+        MW[Firebase Token Middleware]
+        CTRL[Controllers]
+    end
+
+    subgraph DB["🗄️ Database (MongoDB Atlas)"]
+        Users[(Users Collection)]
+        Runs[(Runs Collection)]
+        Quests[(Quests Collection)]
+        Friends[(Friends Collection)]
+        Regions[(Regions Collection)]
+    end
+
+    subgraph External["🌐 External Services"]
+        FB[Firebase Auth]
+        MAPS[Maps API]
+    end
+
+    UI --> FM
+    UI --> MS
+    FM --> FB
+    MS --> MAPS
+    UI -->|"HTTP + Bearer Token"| API
+    API --> MW
+    MW -->|Verify Token| FB
+    CTRL --> Users
+    CTRL --> Runs
+    CTRL --> Quests
+    CTRL --> Friends
+    CTRL --> Regions
+    API --> CTRL
+```
+
+---
+
+## ✨ Features
+
+### 🏠 Home Page
+- Personalized greeting: *"Hi! username"*
+- 2×2 stats dashboard: Daily Steps · Level · Daily Streak · Calories Burned
+- Ongoing quests preview
+- Weekly step histogram
+- SinCity / Uptown mode toggle (top right)
+
+### 🗺️ Map
+- Live GPS route tracking during runs
+- Play / Pause run timer
+- Run data saved to MongoDB
+- Zoom controls (bottom-left, non-obstructing)
+- **SinCity Mode:** Glowing neon regions to capture, collaboration system
+
+### ⚔️ Quests
+- Daily + level-based quests
+- Progress fill bars per quest
+- Completed tasks indicator
+- Uptown Quests + SinCity Quests (7 total in SinCity)
+- Special locked Quest #7 (unlocked after visiting SinCity map)
+
+### 👥 Friends
+- View friends' profiles (username, photo, level, badges, W/L ratio)
+- Add friends via `+` button
+- Challenge friends in live runs
+- W/L ratio tracking per friend
+
+### 👤 Profile
+- Name, email, height, weight, gender, profile photo
+- Badges (clickable with descriptions)
+- All-time records: Longest Run · Best Pace · Regions Captured · Total Calories
+- Total XP (Uptown + SinCity combined)
+- "My Runs" history with delete option
+- Activity Calendar with persistent streak markers
+
+### 🎭 Story Mode (SinCity)
+- Cinematic dialogue sequences with Aarav, Mira & The Stranger
+- Skip option available at every dialogue block
+- Each animation plays only **once per user account**
+- Persistent per-user state stored in MongoDB
+
+---
+
+## 🔄 App Flow
+
+```mermaid
+flowchart TD
+    A([Open App]) --> B{First Time User?}
+    B -->|Yes| C[Login / Sign Up - Firebase]
+    B -->|No| D[Login - Firebase]
+    C --> E[First-Time Setup\nUsername · Height · Weight · Gender]
+    E --> F[Home Page - Uptown Mode]
+    D --> F
+
+    F --> G{Navigate}
+    G --> H[🗺️ Map]
+    G --> I[⚔️ Quests]
+    G --> J[👥 Friends]
+    G --> K[👤 Profile]
+
+    H --> L{SinCity Mode?}
+    L -->|Yes| M[Neon Region Map\nCapture Regions]
+    L -->|No| N[Normal Run Tracker]
+    N --> O[Start Timer → Track Run → Save]
+    M --> O
+
+    I --> P{Quest Type}
+    P --> Q[Daily Quests]
+    P --> R[Level Quests]
+    P --> S[Special Quest #7\nUnlocked via SinCity Map]
+
+    K --> T[View Stats & Badges]
+    K --> U[My Runs History]
+    U --> V[Delete Run\nStreak preserved if run once occurred]
+```
+
+---
+
+## 🗃️ Database Schema
+
+```mermaid
+erDiagram
+    USERS {
+        string uid PK
+        string username
+        string email
+        string profilePhoto
+        number height
+        number weight
+        string gender
+        number level
+        number totalXP
+        number uptownXP
+        number sincityXP
+        string currentMode
+        boolean isFirstLogin
+        object allTimeRecords
+        array badges
+        object storyProgress
+    }
+
+    RUNS {
+        string runId PK
+        string userId FK
+        date date
+        number distance
+        number duration
+        number calories
+        number pace
+        array routeCoordinates
+        boolean questRelated
+        string questId
+    }
+
+    QUESTS {
+        string questId PK
+        string userId FK
+        string type
+        string mode
+        number xpReward
+        number progressCurrent
+        number progressTarget
+        boolean completed
+        boolean locked
+        boolean specialQuest
+    }
+
+    FRIENDS {
+        string friendshipId PK
+        string userId FK
+        string friendId FK
+        number wins
+        number losses
+    }
+
+    REGIONS {
+        string regionId PK
+        string name
+        array coordinates
+        string ownerId FK
+        array collaborators
+        number captureRequirement
+    }
+
+    USERS ||--o{ RUNS : "logs"
+    USERS ||--o{ QUESTS : "has"
+    USERS ||--o{ FRIENDS : "connects"
+    USERS ||--o{ REGIONS : "captures"
+```
+
+---
+
+## 🔐 Authentication Flow
+
+```mermaid
+sequenceDiagram
+    participant U as 👤 User
+    participant FE as React Frontend
+    participant FB as Firebase Auth
+    participant BE as Express Backend
+    participant DB as MongoDB
+
+    U->>FE: Click "Get Started" / "Login"
+    FE->>FB: Initiate Google / Email Auth
+    FB-->>FE: Return ID Token + User Info
+    FE->>BE: POST /api/auth/verify\n{Authorization: Bearer <token>}
+    BE->>FB: Verify ID Token
+    FB-->>BE: Token Valid ✅
+    BE->>DB: Find or Create User
+    DB-->>BE: User Document
+    BE-->>FE: User Profile + JWT Session
+    FE-->>U: Redirect to Home / First-Time Setup
+```
+
+---
+
+## 🌃 Game Modes
+
+```mermaid
+stateDiagram-v2
+    [*] --> UptownMode : Default on new account
+
+    UptownMode --> SinCityMode : Toggle SinCity Button
+    SinCityMode --> UptownMode : Toggle back
+
+    SinCityMode --> SinCityIntro : First time entering\nAarav & Mira dialogue
+    SinCityIntro --> SinCityMode : Skip / Complete intro
+
+    UptownMode --> UptownReturn : First return from SinCity
+    UptownReturn --> UptownMode : Dialogue complete
+
+    SinCityMode --> StoryMode : Enter Story Mode
+    StoryMode --> SpecialQuest : Quest #7 unlocked
+    SpecialQuest --> MissionComplete : Run 2km / Complete
+    SpecialQuest --> MissionFailed : Quit early
+    MissionFailed --> SpecialQuest : Try Again
+    MissionComplete --> SinCityMode
+
+    note right of SinCityMode
+        Characters: AaravS.svg + MiraS.svg
+        Music: 2.mp3 (looping)
+    end note
+
+    note right of UptownMode
+        Characters: AaravU.svg + MiraU.svg
+        Music: 1.mp3 (looping)
+    end note
+```
+
+---
+
+## ⚔️ Quest System
+
+```mermaid
+graph LR
+    subgraph Uptown["🌇 Uptown Quests"]
+        UQ1[Daily Quest 1]
+        UQ2[Daily Quest 2]
+        UQ3[Level Quest 1]
+        UQ4[Level Quest 2]
+        UQ5[Level Quest 3]
+        UQ6[Level Quest 4]
+    end
+
+    subgraph SinCity["🌃 SinCity Quests"]
+        SQ1[SinCity Quest 1]
+        SQ2[SinCity Quest 2]
+        SQ3[SinCity Quest 3]
+        SQ4[SinCity Quest 4]
+        SQ5[SinCity Quest 5]
+        SQ6[SinCity Quest 6]
+        SQ7["⭐ Special Quest #7\n3000 XP\n🔒 Locked"]
+    end
+
+    MAP[🗺️ Visit SinCity Map] -->|Unlocks| SQ7
+    SQ7 -->|Click| STRANGER[The Stranger Dialogue]
+    STRANGER -->|Run 2km| COMPLETE[Mission Complete\n+3000 XP]
+    COMPLETE -->|XP added to| LEVEL[📈 Level + Total XP Update]
+```
 
 ---
 
@@ -162,74 +352,69 @@ Five-phase narrative driven by real-world activity:
 
 ```
 sincity-stride/
-├── backend/
-│   ├── config/
-│   │   └── db.js                  # MongoDB connection
+├── frontend/                   # React Application
+│   ├── public/
+│   │   └── assets/
+│   │       ├── AaravU.svg      # Uptown Aarav character
+│   │       ├── MiraU.svg       # Uptown Mira character
+│   │       ├── AaravS.svg      # SinCity Aarav character
+│   │       ├── MiraS.svg       # SinCity Mira character
+│   │       ├── Stranger.svg    # NPC character
+│   │       ├── man.svg         # Map NPC icon
+│   │       ├── 1.mp3           # Uptown background music
+│   │       └── 2.mp3           # SinCity background music
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── Navbar/
+│   │   │   ├── Characters/     # Aarav, Mira, Stranger dialogue system
+│   │   │   ├── QuestCard/
+│   │   │   ├── MapTracker/
+│   │   │   └── StatsBlock/
+│   │   ├── pages/
+│   │   │   ├── Login.jsx
+│   │   │   ├── Home.jsx
+│   │   │   ├── Map.jsx
+│   │   │   ├── Quests.jsx
+│   │   │   ├── Friends.jsx
+│   │   │   └── Profile.jsx
+│   │   ├── services/
+│   │   │   ├── firebase.js
+│   │   │   ├── api.js
+│   │   │   └── mapService.js
+│   │   ├── context/
+│   │   │   ├── AuthContext.jsx
+│   │   │   └── ModeContext.jsx
+│   │   └── App.jsx
+│   ├── .env
+│   └── package.json
+│
+├── backend/                    # Node.js + Express
 │   ├── controllers/
-│   │   ├── authController.js      # Login/register + onboarding
-│   │   ├── userController.js      # Profile CRUD
-│   │   ├── runController.js       # Save runs, streak logic, district updates
-│   │   ├── questController.js     # Quest completion + XP
-│   │   ├── friendController.js    # Friend requests, mutual accept logic
-│   │   └── districtController.js  # District leaderboards + lord
-│   ├── middleware/
-│   │   ├── verifyToken.js         # Firebase Admin token verification
-│   │   └── errorHandler.js        # Global error handler
+│   │   ├── authController.js
+│   │   ├── userController.js
+│   │   ├── runController.js
+│   │   ├── questController.js
+│   │   ├── friendController.js
+│   │   └── regionController.js
 │   ├── models/
-│   │   ├── User.js                # User schema (xp, streak, activeDays, friends…)
-│   │   ├── Run.js                 # Run schema (distance, pace, districts…)
-│   │   ├── District.js            # District leaderboard + lord
-│   │   └── Quest.js               # Quest completion records
+│   │   ├── User.js
+│   │   ├── Run.js
+│   │   ├── Quest.js
+│   │   ├── Friend.js
+│   │   └── Region.js
 │   ├── routes/
 │   │   ├── auth.js
 │   │   ├── users.js
 │   │   ├── runs.js
 │   │   ├── quests.js
 │   │   ├── friends.js
-│   │   └── districts.js
-│   ├── .env.example
+│   │   └── regions.js
+│   ├── middleware/
+│   │   └── verifyToken.js      # Firebase token verification
+│   ├── .env
 │   ├── server.js
 │   └── package.json
 │
-├── frontend/
-│   ├── public/
-│   │   └── logo.svg               # App logo (add your own)
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── Layout.jsx         # Top bar + bottom nav wrapper
-│   │   │   ├── BottomNav.jsx      # 5-tab navigation bar
-│   │   │   ├── ThemeToggle.jsx    # Uptown ↔ SinCity pill switch
-│   │   │   └── CharacterDialogue.jsx  # Floating character speech bubble
-│   │   ├── context/
-│   │   │   ├── AuthContext.jsx    # Firebase + DB user state
-│   │   │   └── ThemeContext.jsx   # Theme state + localStorage persistence
-│   │   ├── pages/
-│   │   │   ├── Login.jsx          # Login / sign up page
-│   │   │   ├── Onboarding.jsx     # First-time profile setup
-│   │   │   ├── Home.jsx           # Dashboard + calendar + streak
-│   │   │   ├── Quests.jsx         # Quest list with progress bars
-│   │   │   ├── MapPage.jsx        # Live GPS tracking + districts
-│   │   │   ├── Friends.jsx        # Friends, requests, user search
-│   │   │   └── Profile.jsx        # Profile, stats, run history, edit
-│   │   ├── services/
-│   │   │   ├── authService.js     # Firebase auth helpers
-│   │   │   ├── api.js             # Axios instance with auto-token
-│   │   │   └── userService.js     # All API call functions
-│   │   ├── constants/
-│   │   │   └── quests.js          # Quest definitions with XP values
-│   │   ├── utils/
-│   │   │   └── districtBounds.js  # Bangalore polygons + Haversine + point-in-polygon
-│   │   ├── App.jsx                # Router + protected routes
-│   │   ├── main.jsx               # React entry point
-│   │   └── index.css              # Global styles + CSS theme variables
-│   ├── index.html
-│   ├── vite.config.js
-│   ├── tailwind.config.js
-│   ├── postcss.config.js
-│   ├── .env.example
-│   └── package.json
-│
-├── .gitignore
 └── README.md
 ```
 
@@ -238,325 +423,122 @@ sincity-stride/
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js v18 or higher
-- npm v9 or higher
-- A MongoDB Atlas account (free tier works)
-- A Firebase project
+
+- Node.js ≥ 18.x
+- MongoDB Atlas account
+- Firebase project (with Auth enabled)
+- Maps API key (RapidAPI / OpenStreetMap)
 
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/sincity-stride.git
-cd sincity-stride
+git clone https://github.com/manvik0730v/hacknite.git
+cd hacknite
 ```
 
-### 2. Firebase Setup
-
-1. Go to [console.firebase.google.com](https://console.firebase.google.com)
-2. Click **Add Project** → name it `sincity-stride`
-3. Go to **Authentication** → **Sign-in method** → Enable:
-   - Google
-   - Email/Password
-4. Go to **Project Settings** → **General** → scroll to **Your apps** → click **Web** (`</>`)
-5. Register the app → copy the `firebaseConfig` object — you'll need these values for your frontend `.env`
-6. Go to **Project Settings** → **Service Accounts** → click **Generate new private key**
-7. Save the downloaded JSON as `backend/serviceAccountKey.json`
-8. **Add `serviceAccountKey.json` to `.gitignore` immediately**
-
-### 3. Backend Setup
+### 2. Setup Backend
 
 ```bash
 cd backend
 npm install
+cp .env.example .env
+# Fill in your environment variables
+npm run dev
 ```
 
-Create your `.env` file:
+### 3. Setup Frontend
 
 ```bash
+cd frontend
+npm install
 cp .env.example .env
+# Fill in your environment variables
+npm start
 ```
 
-Edit `backend/.env`:
+### 4. Run Both Simultaneously
+
+```bash
+# From root directory (if concurrently is set up)
+npm run dev
+```
+
+---
+
+## 🔑 Environment Variables
+
+### Backend (`/backend/.env`)
 
 ```env
 PORT=5000
-MONGODB_URI=mongodb+srv://manvik0730v:YOUR_PASSWORD@cluster0.qbigyod.mongodb.net/sincitystride?appName=Cluster0
-FIREBASE_PROJECT_ID=your-firebase-project-id
-FRONTEND_URL=http://localhost:5173
-NODE_ENV=development
-GOOGLE_APPLICATION_CREDENTIALS=./serviceAccountKey.json
+MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.qbigyod.mongodb.net/?appName=Cluster0
+FIREBASE_PROJECT_ID=your_firebase_project_id
+FIREBASE_PRIVATE_KEY=your_private_key
+FIREBASE_CLIENT_EMAIL=your_client_email
+CORS_ORIGIN=https://sincitystride.vercel.app
 ```
 
-### 4. Frontend Setup
-
-```bash
-cd ../frontend
-npm install
-```
-
-Create your `.env` file:
-
-```bash
-cp .env.example .env
-```
-
-Edit `frontend/.env` with values from your Firebase project settings:
+### Frontend (`/frontend/.env`)
 
 ```env
-VITE_API_URL=http://localhost:5000/api
-VITE_FIREBASE_API_KEY=AIza...
-VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your-project-id
-VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=123456789
-VITE_FIREBASE_APP_ID=1:123456789:web:abc123
+REACT_APP_BACKEND_URL=http://localhost:5000
+REACT_APP_FIREBASE_API_KEY=your_api_key
+REACT_APP_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+REACT_APP_FIREBASE_PROJECT_ID=your_project_id
+REACT_APP_MAPS_API_KEY=your_maps_api_key
 ```
 
-### 5. Add Your Logo
-
-Place your logo file at:
-```
-frontend/public/logo.svg
-```
-
-### 6. Run the Project
-
-Open **two terminal windows**:
-
-**Terminal 1 — Backend:**
-```bash
-cd backend
-npm run dev
-# Server starts at http://localhost:5000
-```
-
-**Terminal 2 — Frontend:**
-```bash
-cd frontend
-npm run dev
-# App starts at http://localhost:5173
-```
-
-**Or run both simultaneously from the root** (optional):
-
-```bash
-# In root directory
-npm install -D concurrently
-
-# Add to root package.json scripts:
-# "dev": "concurrently \"cd backend && npm run dev\" \"cd frontend && npm run dev\""
-
-npm run dev
-```
-
----
-
-## 🔌 API Reference
-
-All endpoints require a Firebase ID token in the `Authorization` header:
-```
-Authorization: Bearer <firebase_id_token>
-```
-
-### Auth
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/login` | Login or register user in MongoDB |
-| POST | `/api/auth/onboarding` | Complete first-time profile setup |
-
-### Users
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/users/me` | Get current user profile |
-| PUT | `/api/users/me` | Update profile (username, height, weight, etc.) |
-| GET | `/api/users/all?search=` | Get all users (with optional search) |
-| GET | `/api/users/:uid` | Get public profile of any user |
-
-### Runs
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/runs` | Save a completed run |
-| GET | `/api/runs/my` | Get all runs for current user |
-| DELETE | `/api/runs/:id` | Delete a specific run |
-| POST | `/api/runs/mark-active` | Mark today as active (for streak) |
-
-### Quests
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/quests/complete` | Complete a quest, award XP |
-| GET | `/api/quests/completed` | Get list of completed quest IDs |
-
-### Friends
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/friends` | Get friends list + incoming requests |
-| POST | `/api/friends/request` | Send a friend request |
-| POST | `/api/friends/respond` | Accept or reject a request |
-
-### Districts
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/districts` | Get all districts with leaderboards |
-| GET | `/api/districts/mine` | Get districts where current user is Lord |
-| GET | `/api/districts/:name` | Get a specific district |
-
----
-
-## 🗄️ Database Schema
-
-### User
-```js
-{
-  uid: String,              // Firebase UID (primary key)
-  username: String,         // unique, set during onboarding
-  email: String,
-  profilePic: String,       // base64 or URL
-  height: Number,           // cm
-  weight: Number,           // kg
-  gender: String,           // 'male' | 'female' | 'other'
-  phone: String,
-  xp: Number,               // default 0
-  streak: Number,           // consecutive active days
-  lastActiveDate: String,   // 'YYYY-MM-DD'
-  activeDays: [String],     // all days with activity
-  longestRun: Number,       // km
-  bestPace: Number,         // min/km (lower = better)
-  totalDistricts: Number,   // districts where user is Lord
-  onboardingComplete: Boolean,
-  friends: [String],        // array of UIDs
-  friendRequests: [String], // incoming request UIDs
-  sentRequests: [String],   // outgoing request UIDs
-  completedQuests: [String] // quest IDs
-}
-```
-
-### Run
-```js
-{
-  uid: String,
-  date: String,             // 'YYYY-MM-DD'
-  distance: Number,         // km
-  duration: Number,         // seconds
-  avgPace: Number,          // min/km
-  steps: Number,
-  districts: [{
-    name: String,
-    distance: Number        // km covered in this district
-  }],
-  startTime: Date,
-  endTime: Date
-}
-```
-
-### District
-```js
-{
-  name: String,             // unique district name
-  leaderboard: [{
-    uid: String,
-    username: String,
-    profilePic: String,
-    totalDistance: Number   // km (sorted descending)
-  }],
-  lord: {
-    uid: String,
-    username: String,
-    profilePic: String
-  }
-}
-```
+> ⚠️ **Never commit `.env` files to version control.** They are listed in `.gitignore`.
 
 ---
 
 ## 🌐 Deployment
 
-### Frontend → Vercel
-
-1. Push your code to GitHub
-2. Go to [vercel.com](https://vercel.com) → **New Project** → Import your repo
-3. Set **Root Directory** to `frontend`
-4. Add all `VITE_*` environment variables in the Vercel dashboard
-5. Deploy — Vercel auto-detects Vite
-
-```bash
-# Or deploy via CLI
-npm i -g vercel
-cd frontend
-vercel
+```mermaid
+graph LR
+    DEV[Local Development] -->|git push| GH[GitHub Repo]
+    GH -->|Auto Deploy| VFE[Vercel\nFrontend\nsincitystride.vercel.app]
+    GH -->|Auto Deploy| VBE[Backend Server\nExpress API]
+    VFE -->|API Calls| VBE
+    VBE -->|Read/Write| MDB[MongoDB Atlas]
+    VFE -->|Auth| FB[Firebase]
+    VBE -->|Verify Token| FB
 ```
 
-### Backend → Render
-
-1. Go to [render.com](https://render.com) → **New Web Service** → Connect your repo
-2. Set **Root Directory** to `backend`
-3. Build command: `npm install`
-4. Start command: `npm start`
-5. Add all environment variables from `backend/.env` in the Render dashboard
-6. Add your `serviceAccountKey.json` contents as an env variable or use Render's secret files
-
-### Database → MongoDB Atlas
-
-Your cluster is already set up at:
-```
-cluster0.qbigyod.mongodb.net
-```
-
-Make sure to whitelist `0.0.0.0/0` in Atlas Network Access for Render's dynamic IPs.
+- **Frontend:** Deployed on [Vercel](https://vercel.com) at `sincitystride.vercel.app`
+- **Backend:** Express server deployed separately
+- **Database:** MongoDB Atlas (cloud-hosted)
+- **Auth:** Firebase Authentication
 
 ---
 
-## 🔒 Security Best Practices
+## 🎭 Characters
 
-- **Never commit `.env` files** — they are in `.gitignore`
-- **Never commit `serviceAccountKey.json`** — treat it like a password
-- All API routes are protected with `verifyToken` middleware
-- Firebase tokens expire after 1 hour — the Axios interceptor auto-refreshes them
-- CORS is restricted to your frontend URL only
-- Helmet.js sets secure HTTP headers on all responses
+| Character | Mode | SVG File | Role |
+|-----------|------|----------|------|
+| Aarav (Uptown) | Normal | `AaravU.svg` | Guide & Motivator |
+| Mira (Uptown) | Normal | `MiraU.svg` | Guide & Motivator |
+| Aarav (SinCity) | SinCity | `AaravS.svg` | Tactical Commander |
+| Mira (SinCity) | SinCity | `MiraS.svg` | Tactical Commander |
+| The Stranger | SinCity | `Stranger.svg` | Special Quest NPC |
 
----
-
-## 🗺️ How District Detection Works
-
-1. User starts a run — GPS coordinates stream in every second
-2. Each coordinate is checked against 23 polygon boundaries using the **ray casting algorithm**
-3. If the point is inside a polygon, that district gets the incremental distance
-4. On run save, each district's leaderboard is updated in MongoDB
-5. If the user now has the highest total distance in a district, they become **Lord**
-6. The map highlights their owned districts with a glowing border
-
-```
-GPS point → point-in-polygon check → district name → add distance → update leaderboard → assign Lord
-```
+> Each character dialogue sequence plays **only once per user account** and can be skipped at any time.
 
 ---
 
-## 🎯 Hackathon Evaluation Coverage
+## 👤 Author
 
-| Criterion | Implementation |
-|-----------|---------------|
-| **Problem Statement** | Fitness consistency through gamification (quests, streaks, territory) |
-| **Technical Implementation** | Full-stack: React + Node/Express + MongoDB + Firebase Auth + Leaflet Maps |
-| **UI/UX Design** | Dual theme system, Bebas Neue typography, animated transitions, responsive layout |
-| **Code Quality** | MVC architecture, separated contexts/services/controllers, reusable components |
-| **Deployment** | Vercel (frontend) + Render (backend) + MongoDB Atlas |
-| **Documentation** | This README + inline code comments + `.env.example` files |
+**Manvik Kumar Gupta**
 
----
-
-## 👥 Team
-
-Built at **HackNite 2026** — Zense Annual Hackathon for Freshers
-Theme: **SinCity [Las Vegas]**
-Track: **Web Development**
+- GitHub: [@manvik0730v](https://github.com/manvik0730v)
+- Project: [SinCity Stride](https://github.com/manvik0730v/hacknite)
 
 ---
 
 ## 📄 License
 
-MIT — do whatever you want, just don't be soft about it.
+This project was built for a Hackathon. All rights reserved © Manvik Kumar Gupta.
 
 ---
 
-> *"The city doesn't sleep. Neither should your streak."*
-> — SinCity Stride
+> *"You weren't supposed to find it this early. But I guess you're not like the others."* — Mira
