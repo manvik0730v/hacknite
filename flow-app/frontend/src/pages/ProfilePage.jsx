@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { logout } from '../services/firebase';
 import { useNavigate } from 'react-router-dom';
-import { FiEdit2, FiTrash2, FiLogOut, FiZap } from 'react-icons/fi';
+import { FiEdit2, FiTrash2, FiLogOut, FiZap, FiTrendingUp } from 'react-icons/fi';
 import { GiCrown } from 'react-icons/gi';
 import { getLevel, xpToNextLevel } from '../utils/level';
 import API from '../services/api';
@@ -116,8 +116,9 @@ export default function ProfilePage() {
                 <span className={`text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${sinMode?'bg-red-950 text-red-300':'bg-blue-50 text-blue-600'}`}>
                   <FiZap size={10} className="text-yellow-500" />{xp} XP
                 </span>
-                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--bg3)] text-[var(--text2)]">
-                  🔥 {dbUser?.streak||0}d
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--bg3)] text-[var(--text2)] flex items-center gap-1">
+                  <FiTrendingUp size={10} className={sinMode?'text-red-400':'text-blue-400'} />
+                  {dbUser?.streak||0}d streak
                 </span>
               </div>
             </div>

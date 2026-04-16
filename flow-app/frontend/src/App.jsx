@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { StoryProvider } from './context/StoryContext';
 import StoryOverlay from './components/StoryOverlay';
+import BackgroundMusic from './components/BackgroundMusic';
 import BottomNav from './components/BottomNav';
 import LoginPage from './pages/LoginPage';
 import HomePage from './pages/HomePage';
@@ -28,6 +29,7 @@ function AppRoutes() {
       </Routes>
       <BottomNav />
       <StoryOverlay />
+      <BackgroundMusic />
     </>
   );
 }

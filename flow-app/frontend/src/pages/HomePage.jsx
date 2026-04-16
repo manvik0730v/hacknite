@@ -3,7 +3,7 @@ import { useTheme } from '../context/ThemeContext';
 import SinModeToggle from '../components/SinModeToggle';
 import API from '../services/api';
 import { useEffect, useState } from 'react';
-import { FiChevronLeft, FiChevronRight, FiRefreshCw } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiRefreshCw, FiSun } from 'react-icons/fi';
 import logo from '../assets/logo.svg';
 import logo2 from '../assets/logo2.svg';
 
@@ -83,7 +83,7 @@ useEffect(() => {
       <div className="flex justify-between items-center px-4 pt-5 pb-3">
         <div>
           <p className={`text-xs ${sinMode ? 'text-red-300' : 'text-blue-400'}`}>Hi there!</p>
-          <p className="text-xl font-black text-[var(--text)]">{dbUser?.username || 'User'} 👋</p>
+          <p className="text-xl font-black text-[var(--text)]">{dbUser?.username || 'User'}</p>
         </div>
         <SinModeToggle />
       </div>
