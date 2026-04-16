@@ -12,7 +12,7 @@ app.get('/', (req, res) => res.json({ message: 'SinCity Stride API running' }));
 app.use(cors({
   origin: [
     'http://localhost:5173',
-    'https://sincity-stride.vercel.app'  // your actual Vercel URL
+    'https://sincitystride.vercel.app'  // your actual Vercel URL
   ]
 }));
 app.use(helmet());
